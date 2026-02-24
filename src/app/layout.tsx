@@ -1,24 +1,32 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Lora } from "next/font/google";
+import { Roboto, Montserrat } from "next/font/google";
 import "./globals.css";
 
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
+const roboto = Roboto({
+  variable: "--font-roboto",
   subsets: ["latin"],
   display: "swap",
+  weight: ["400", "500", "700"],
 });
 
-const lora = Lora({
-  variable: "--font-lora",
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin"],
   display: "swap",
+  weight: ["500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Atulyaswar Publication | Where Stories Come Alive",
+  title: "Atulyaswar | Music Journal and Notation Editor",
   description:
-    "Atulyaswar Publication — a distinguished publishing house dedicated to bringing extraordinary stories, timeless literature, and powerful voices to readers worldwide.",
-  keywords: ["publishing", "books", "literature", "Atulyaswar", "publication"],
+    "Atulyaswar website with two products: A peer reviewed music research journal and an upcoming notation editor.",
+  keywords: [
+    "Atulyaswar",
+    "music research journal",
+    "peer reviewed journal",
+    "notation editor",
+    "open access policy",
+  ],
 };
 
 export default function RootLayout({
@@ -28,7 +36,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${playfair.variable} ${lora.variable} antialiased`}>
+      <body
+        className={`${roboto.variable} ${montserrat.variable} antialiased`}
+      >
         {children}
       </body>
     </html>
