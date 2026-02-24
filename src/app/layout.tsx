@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Roboto, Montserrat } from "next/font/google";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -40,6 +41,7 @@ export default function RootLayout({
         className={`${roboto.variable} ${montserrat.variable} antialiased`}
       >
         {children}
+        <LanguageSwitcher />
       </body>
     </html>
   );

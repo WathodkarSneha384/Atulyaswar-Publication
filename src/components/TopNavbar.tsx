@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import BrandLogo from "@/components/BrandLogo";
 import { journalMenuItems } from "@/lib/journalContent";
 
@@ -6,7 +9,62 @@ type TopNavbarProps = {
   activePath: string;
 };
 
+type Language = "english" | "hindi" | "marathi";
+
+const normalizeLanguage = (value: string | null): Language => {
+  if (value === "hindi" || value === "hi") return "hindi";
+  if (value === "marathi" || value === "mr") return "marathi";
+  return "english";
+};
+
 export default function TopNavbar({ activePath }: TopNavbarProps) {
+  const [language, setLanguage] = useState<Language>("english");
+
+  useEffect(() => {
+    setLanguage(normalizeLanguage(localStorage.getItem("atulyaswar-language")));
+
+    const handler = (event: Event) => {
+      const custom = event as CustomEvent<Language>;
+      setLanguage(normalizeLanguage(custom.detail));
+    };
+
+    document.addEventListener("atulyaswar-language-change", handler);
+    return () => document.removeEventListener("atulyaswar-language-change", handler);
+  }, []);
+
+  const labels = useMemo(
+    () => {
+      if (language === "hindi") {
+        return {
+          Home: "होम",
+          Journal: "जर्नल",
+          Editor: "एडिटर",
+          Login: "लॉगिन",
+          Register: "रजिस्टर",
+        };
+      }
+
+      if (language === "marathi") {
+        return {
+          Home: "मुख्यपृष्ठ",
+          Journal: "जर्नल",
+          Editor: "एडिटर",
+          Login: "लॉगिन",
+          Register: "नोंदणी",
+        };
+      }
+
+      return {
+        Home: "Home",
+        Journal: "Journal",
+        Editor: "Editor",
+        Login: "Login",
+        Register: "Register",
+      };
+    },
+    [language],
+  );
+
   return (
     <header className="top-header">
       <div className="header-inner">
@@ -27,7 +85,7 @@ export default function TopNavbar({ activePath }: TopNavbarProps) {
                     href={item.href}
                     className={`menu-item ${isActive ? "active" : ""}`}
                   >
-                    {item.label}
+                    {labels[item.label as keyof typeof labels] ?? item.label}
                   </Link>
                 );
               })}
@@ -35,13 +93,13 @@ export default function TopNavbar({ activePath }: TopNavbarProps) {
                 href="/editor"
                 className={`menu-item ${activePath === "/editor" ? "active" : ""}`}
               >
-                Editor
+                {labels.Editor}
               </Link>
               <Link href="#" className="menu-item auth-menu-item">
-                Login
+                {labels.Login}
               </Link>
               <Link href="#" className="menu-item auth-menu-item">
-                Register
+                {labels.Register}
               </Link>
             </nav>
           </div>
