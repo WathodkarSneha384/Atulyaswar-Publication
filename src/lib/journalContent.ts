@@ -74,6 +74,16 @@ export const journalPages = {
       "Status update flow after submission.",
     ],
   },
+  manuscripts: {
+    title: "Manuscripts",
+    description:
+      "Approved manuscript submissions are listed here after admin review and approval.",
+    points: [
+      "Shows approved manuscript titles and author information.",
+      "Updated by editorial admin after submission review.",
+      "Supports transparent publication workflow.",
+    ],
+  },
   guidelines: {
     title: "Guidelines",
     description:

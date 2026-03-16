@@ -41,6 +41,7 @@ export default function SiteFooter() {
             archive: "आर्काइव",
             authors: "लेखक",
             submit: "पांडुलिपि जमा करें",
+            manuscripts: "पांडुलिपियां",
             guidelines: "गाइडलाइंस",
             faq: "सामान्य प्रश्न",
             policy: "ओपन एक्सेस पॉलिसी",
@@ -64,6 +65,7 @@ export default function SiteFooter() {
               archive: "संग्रह",
               authors: "लेखक",
               submit: "हस्तलिखित सादर करा",
+              manuscripts: "हस्तलिखिते",
               guidelines: "मार्गदर्शक सूचना",
               faq: "प्रश्नोत्तरे",
               policy: "मुक्त प्रवेश धोरण",
@@ -86,6 +88,7 @@ export default function SiteFooter() {
             archive: "Archive",
             authors: "Authors",
             submit: "Submit Manuscript",
+            manuscripts: "Manuscripts",
             guidelines: "Guidelines",
             faq: "FAQ",
             policy: "Open Access Policy",
@@ -136,6 +139,7 @@ export default function SiteFooter() {
             <h4 className="footer-title">{t.authors}</h4>
             <div className="footer-links">
               <Link href="/journal/submit-manuscript">{t.submit}</Link>
+              <Link href="/journal/manuscripts">{t.manuscripts}</Link>
               <Link href="/journal/guidelines">{t.guidelines}</Link>
               <Link href="/faq">{t.faq}</Link>
               <Link href="/journal/open-access-policy">{t.policy}</Link>
@@ -149,7 +153,8 @@ export default function SiteFooter() {
               <Link href="/editor">{t.editor}</Link>
             </div>
             <p className="footer-muted">{t.location}</p>
-            <p className="footer-muted">Email: editor@atulyaswar.org</p>
+            <p className="footer-muted">Email: atulyaswarpublication@gmail.com</p>
+            <p className="footer-muted">Phone: +91 9765556976</p>
           </section>
         </div>
 

@@ -39,7 +39,7 @@ export default function TopNavbar({ activePath }: TopNavbarProps) {
           Home: "होम",
           Journal: "जर्नल",
           Editor: "एडिटर",
-          Login: "लॉगिन",
+          Login: "एडमिन लॉगिन",
           Register: "रजिस्टर",
         };
       }
@@ -49,7 +49,7 @@ export default function TopNavbar({ activePath }: TopNavbarProps) {
           Home: "मुख्यपृष्ठ",
           Journal: "जर्नल",
           Editor: "एडिटर",
-          Login: "लॉगिन",
+          Login: "ॲडमिन लॉगिन",
           Register: "नोंदणी",
         };
       }
@@ -58,7 +58,7 @@ export default function TopNavbar({ activePath }: TopNavbarProps) {
         Home: "Home",
         Journal: "Journal",
         Editor: "Editor",
-        Login: "Login",
+        Login: "Admin Login",
         Register: "Register",
       };
     },
@@ -95,7 +95,12 @@ export default function TopNavbar({ activePath }: TopNavbarProps) {
               >
                 {labels.Editor}
               </Link>
-              <Link href="#" className="menu-item auth-menu-item">
+              <Link
+                href="/admin/login"
+                className={`menu-item auth-menu-item ${
+                  activePath === "/admin/login" ? "active" : ""
+                }`}
+              >
                 {labels.Login}
               </Link>
               <Link href="#" className="menu-item auth-menu-item">

@@ -3,34 +3,49 @@ import TopNavbar from "@/components/TopNavbar";
 
 const faqItems = [
   {
-    question: "How can I submit my manuscript?",
+    question: "Who can submit the manuscript/research paper?",
     answer:
-      "Go to the Submit section from the footer or journal menu, fill author details, and upload your manuscript with the required declaration.",
+      "atulyaswarpublication@gmail.com | +91 9765556976 | All Musicians, Singers, Academicians, Researchers, Students, Scholars",
   },
   {
-    question: "What is the typical review timeline?",
+    question: "How to write and submit the manuscript/research paper?",
     answer:
-      "Initial editorial screening is usually completed first, followed by peer review. The timeline can vary by manuscript quality and reviewer availability.",
+      "Please follow the Guidelines Menu",
   },
   {
-    question: "Does the journal follow an open access policy?",
+    question: "In which language my paper can be written?",
     answer:
-      "Yes. The journal aims to make research content accessible to readers and scholars without access barriers.",
+      "English or Hindi or Marathi",
   },
   {
-    question: "Which citation style should authors use?",
+    question: "Which reference style is to be followed to write research papers?",
     answer:
-      "Authors should follow the style mentioned in Guidelines and keep references consistent throughout the manuscript.",
+      "Any recognised reference style like Chicago, APA etc.",
   },
   {
-    question: "Can I submit work related to notation and pedagogy?",
+    question: "What if my paper is rejected?",
     answer:
-      "Yes. Manuscripts on notation systems, pedagogy, performance practice, and interdisciplinary music studies are welcome.",
+      "Please follow guidelines given and do better efforts next time!",
   },
   {
-    question: "How do I contact the editorial team?",
+    question: "How much fees will be charged to submit the paper?",
     answer:
-      "Use the Contact Us page for official communication channels and submission-related assistance.",
+      "We will let you know the fees through our official email when your paper will be selected to publish after the peer review.",
+  },
+  {
+    question: "What is the procedure for accepting or rejecting the submission?",
+    answer:
+      "We follow double – blind method for the peer review. The Board of reviewers will approve or reject the paper.",
+  },
+  {
+    question: "Is this a subscription – based journal?",
+    answer:
+      "No, this is an open access journal with free and unlimited access to full text to the readers.",
+  },
+  {
+    question: "Can readers get a print copy of the journal?",
+    answer:
+      "No, Atulyaswar Journal is an e-journal, not available to print. Author may download its published pdf copy from the website.",
   },
 ];
 
