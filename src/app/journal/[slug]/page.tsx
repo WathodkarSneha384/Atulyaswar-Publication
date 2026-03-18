@@ -13,8 +13,8 @@ import archiveDummyData from "@/data/archiveDummyData.json";
 import drSanikaImage from "../../../../Asset/Board_Members/Dr. Sanika Goregaonkar.jpg";
 import drVilasImage from "../../../../Asset/Board_Members/Dr. Vilas Jadhav.png";
 import profSheetalImage from "../../../../Asset/Board_Members/Prof. Sheetal More.jpg";
-import profSuneeraImage from "../../../../Asset/Board_Members/Prof. Suneera Kasliwal.JPG";
-import ptVidyadharImage from "../../../../Asset/Board_Members/Pt. Vidyadhar Vyas.JPG";
+import profSuneeraImage from "../../../../Asset/Board_Members/Prof. Suneera Kasliwal.jpg";
+import ptVidyadharImage from "../../../../Asset/Board_Members/Pt. Vidyadhar Vyas.jpg";
 
 type JournalSubPageProps = {
   params: Promise<{ slug: string }>;
@@ -34,34 +34,52 @@ async function renderMenuPage(slug: string) {
   if (slug === "about") {
     return (
       <>
-        <h2>About</h2>
-        <p>
-          It is with great pride that we introduce Atulyaswar – A peer reviewed,
-          Indian Music Journal dedicated to the research in Indian Classical
-          Music.
-        </p>
-        <p>
-          The world of Indian Classical Music is an intricate tapestry of sound,
-          spirituality, and mathematics. For centuries, this art form has
-          flourished through the Guru-Shishya Parampara, an oral tradition that
-          has preserved the sanctity of the Swar and Laya.
-        </p>
-        <p>
-          However, as we navigate the digital age, the need for a centralized,
-          scholarly, and accessible platform for intellectual discussion has
-          never been more pressing. This journal serves as a bridge between the
-          practitioner and the theorist. By operating as an open-access
-          platform, we ensure that knowledge is not confined to the ivory towers
-          of academia but is freely available to musicians, students, and
-          enthusiasts worldwide. The journal will publish two issues per year.
-        </p>
-        <p>
-          Through peer-reviewed research papers, we aim to document the
-          &apos;living&apos; nature of our music. We invite scholars and performers
-          alike to submit their findings, challenging old paradigms and
-          suggesting new ways to perceive the infinite possibilities within a
-          single note.
-        </p>
+        <section className="about-page-wrap">
+          <h2 className="about-title">About</h2>
+          <div className="about-intro-card">
+            <p>
+              It is with great pride that we introduce Atulyaswar – A peer reviewed,
+              Indian Music Journal dedicated to the research in Indian Classical
+              Music.
+            </p>
+          </div>
+
+          <div className="about-content-grid">
+            <article className="about-content-card">
+              <p>
+                The world of Indian Classical Music is an intricate tapestry of sound,
+                spirituality, and mathematics. For centuries, this art form has
+                flourished through the Guru-Shishya Parampara, an oral tradition that
+                has preserved the sanctity of the Swar and Laya.
+              </p>
+              <p>
+                However, as we navigate the digital age, the need for a centralized,
+                scholarly, and accessible platform for intellectual discussion has
+                never been more pressing. This journal serves as a bridge between the
+                practitioner and the theorist.
+              </p>
+              <p>
+                By operating as an open-access platform, we ensure that knowledge is
+                not confined to the ivory towers of academia but is freely available
+                to musicians, students, and enthusiasts worldwide. The journal will
+                publish two issues per year.
+              </p>
+            </article>
+
+            <aside className="about-highlight-card">
+              <h3>Our Vision</h3>
+              <p>
+                Through peer-reviewed research papers, we aim to document the
+                &apos;living&apos; nature of our music.
+              </p>
+              <p>
+                We invite scholars and performers alike to submit their findings,
+                challenging old paradigms and suggesting new ways to perceive the
+                infinite possibilities within a single note.
+              </p>
+            </aside>
+          </div>
+        </section>
       </>
     );
   }

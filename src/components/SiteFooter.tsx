@@ -45,6 +45,7 @@ export default function SiteFooter() {
             guidelines: "गाइडलाइंस",
             faq: "सामान्य प्रश्न",
             policy: "ओपन एक्सेस पॉलिसी",
+              resources: "उपयोगी लिंक",
             contact: "संपर्क",
             contactUs: "संपर्क करें",
             editor: "नोटेशन एडिटर",
@@ -69,6 +70,7 @@ export default function SiteFooter() {
               guidelines: "मार्गदर्शक सूचना",
               faq: "प्रश्नोत्तरे",
               policy: "मुक्त प्रवेश धोरण",
+              resources: "उपयुक्त दुवे",
               contact: "संपर्क",
               contactUs: "संपर्क करा",
               editor: "नोटेशन एडिटर",
@@ -92,6 +94,7 @@ export default function SiteFooter() {
             guidelines: "Guidelines",
             faq: "FAQ",
             policy: "Open Access Policy",
+            resources: "Resources",
             contact: "Contact",
             contactUs: "Contact Us",
             editor: "Notation Editor",
@@ -126,32 +129,15 @@ export default function SiteFooter() {
           </section>
 
           <section>
-            <h4 className="footer-title">{t.journal}</h4>
+            <h4 className="footer-title">{t.resources}</h4>
             <div className="footer-links">
-              <Link href="/journal/about">{t.about}</Link>
-              <Link href="/journal/editorial-board">{t.board}</Link>
-              <Link href="/journal/current-issue">{t.current}</Link>
-              <Link href="/journal/archive">{t.archive}</Link>
-            </div>
-          </section>
-
-          <section>
-            <h4 className="footer-title">{t.authors}</h4>
-            <div className="footer-links">
-              <Link href="/journal/submit-manuscript">{t.submit}</Link>
               <Link href="/journal/manuscripts">{t.manuscripts}</Link>
-              <Link href="/journal/guidelines">{t.guidelines}</Link>
-              <Link href="/faq">{t.faq}</Link>
               <Link href="/journal/open-access-policy">{t.policy}</Link>
             </div>
           </section>
 
           <section>
             <h4 className="footer-title">{t.contact}</h4>
-            <div className="footer-links">
-              <Link href="/journal/contact-us">{t.contactUs}</Link>
-              <Link href="/editor">{t.editor}</Link>
-            </div>
             <p className="footer-muted">{t.location}</p>
             <p className="footer-muted">Email: atulyaswarpublication@gmail.com</p>
             <p className="footer-muted">Phone: +91 9765556976</p>

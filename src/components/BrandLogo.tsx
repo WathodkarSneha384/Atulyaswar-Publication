@@ -1,5 +1,5 @@
 import Image from "next/image";
-import logoImage from "../../Asset/Logo.png";
+import logoImage from "../../Asset/Logo1.png";
 
 type BrandLogoProps = {
   subtitle?: string;
