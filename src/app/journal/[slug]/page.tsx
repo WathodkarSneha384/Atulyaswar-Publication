@@ -281,15 +281,12 @@ async function renderMenuPage(slug: string) {
     return (
       <>
         <h2>Guidelines for Authors</h2>
-        <ol className="guideline-list">
+        <ul className="guideline-list manuscript-guideline-list">
           <li>
-            Research paper should be written in the following format:
-            <ul className="journal-list">
+            Research paper should be written in following format.
+            <ul className="sub-guideline-list manuscript-sub-guideline-list">
               <li>Title of Paper</li>
-              <li>
-                Author(s) name with full official designation, institute name,
-                Email, Contact No
-              </li>
+              <li>Author(s) name with full official designation, institute name, Email, Contact No</li>
               <li>Abstract</li>
               <li>Keywords</li>
               <li>Introduction</li>
@@ -301,13 +298,7 @@ async function renderMenuPage(slug: string) {
           </li>
           <li>Submit your manuscript through this website only.</li>
           <li>Word limit is Minimum 2000 to Maximum 5000.</li>
-          <li>
-            Fonts allowed:
-            <ul className="journal-list">
-              <li>English - Times New Roman in 12 font size</li>
-              <li>Hindi/Marathi - Unicode Mangal font</li>
-            </ul>
-          </li>
+          <li>Fonts allowed: English - Times New Roman in 12 font size, Hindi/Marathi - Unicode Mangal font.</li>
           <li>
             Authors will be notified via email regarding the outcome of the
             review process and the subsequent acceptance or rejection of their
@@ -319,9 +310,8 @@ async function renderMenuPage(slug: string) {
             clarity and adherence to the journal&apos;s guidelines.
           </li>
           <li>
-            Authors must adhere to strict ethical standards and avoid the
-            following forms of misconduct:
-            <ul className="journal-list">
+            Authors must adhere to strict ethical standards and avoid the following forms of misconduct:
+            <ul className="sub-guideline-list manuscript-sub-guideline-list">
               <li>
                 Misrepresentation: Including any false, fraudulent, misleading,
                 or fabricated information within the manuscript.
@@ -334,10 +324,7 @@ async function renderMenuPage(slug: string) {
             In such cases, after consulting with Author, the Journal will
             publish the revised paper.
           </li>
-          <li>
-            If plagiarism is identified that violates UGC guidelines, the paper
-            may be rejected.
-          </li>
+          <li>If plagiarism is identified that violates UGC guidelines, the paper may be rejected.</li>
           <li>
             If submitted manuscript is already published elsewhere, in any form
             (book/chapter in book/book section/research paper etc), the paper
@@ -348,7 +335,7 @@ async function renderMenuPage(slug: string) {
             DrillBit/Turnitin/ithenticate softwares and upload it while
             submitting the paper.
           </li>
-        </ol>
+        </ul>
       </>
     );
   }

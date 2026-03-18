@@ -332,60 +332,6 @@ export default function SubmitManuscriptForm() {
           </p>
         )}
       </form>
-
-      <aside className="submit-guidelines-card">
-        <h3>Guidelines for Authors</h3>
-        <ul className="guideline-list manuscript-guideline-list">
-          <li>
-            Research paper should be written in following format.
-            <ul className="sub-guideline-list manuscript-sub-guideline-list">
-              <li>Title of Paper</li>
-              <li>Author(s) name with full official designation, institute name, Email, Contact No</li>
-              <li>Abstract</li>
-              <li>Keywords</li>
-              <li>Introduction</li>
-              <li>Main body</li>
-              <li>Observation/Analysis</li>
-              <li>Result</li>
-              <li>Reference/Bibliography (in any recognized format)</li>
-            </ul>
-          </li>
-          <li>Submit your manuscript through this website only.</li>
-          <li>Word limit is Minimum 2000 to Maximum 5000.</li>
-          <li>Fonts allowed: English - Times New Roman in 12 font size, Hindi/Marathi - Unicode Mangal font.</li>
-          <li>
-            Authors will be notified via email regarding the outcome of the review process and the
-            subsequent acceptance or rejection of their manuscript.
-          </li>
-          <li>
-            The Editor reserves the right to make necessary linguistic, grammatical, and formatting
-            adjustments to manuscripts to ensure clarity and adherence to the journal&apos;s guidelines.
-          </li>
-          <li>
-            Authors must adhere to strict ethical standards and avoid the following forms of misconduct:
-            <ul className="sub-guideline-list manuscript-sub-guideline-list">
-              <li>
-                Misrepresentation: Including any false, fraudulent, misleading, or fabricated
-                information within the manuscript.
-              </li>
-              <li>
-                Content Liability: Ambiguous content or errors that may lead to the
-                misinterpretation of research findings.
-              </li>
-            </ul>
-            In such cases, after consulting with Author, the Journal will publish the revised paper.
-          </li>
-          <li>If plagiarism is identified that violates UGC guidelines, the paper may be rejected.</li>
-          <li>
-            If submitted manuscript is already published elsewhere, in any form (book/chapter in
-            book/book section/research paper etc), the paper will be rejected.
-          </li>
-          <li>
-            Author should obtain Plagiarism Report through DrillBit/Turnitin/ithenticate softwares and
-            upload it while submitting the paper.
-          </li>
-        </ul>
-      </aside>
     </div>
   );
 }
