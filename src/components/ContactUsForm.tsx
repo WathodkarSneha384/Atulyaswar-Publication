@@ -4,6 +4,15 @@ import { FormEvent, useState } from "react";
 
 type SubmitState = "idle" | "submitting" | "success" | "error";
 
+function isEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function isPhone(value: string) {
+  const compact = value.replace(/[^\d+]/g, "");
+  return /^[+]?\d{8,15}$/.test(compact);
+}
+
 export default function ContactUsForm() {
   const [state, setState] = useState<SubmitState>("idle");
   const [message, setMessage] = useState("");
@@ -19,9 +28,28 @@ export default function ContactUsForm() {
     const payload = {
       name: String(formData.get("name") ?? "").trim(),
       email: String(formData.get("email") ?? "").trim(),
+      phone: String(formData.get("phone") ?? "").trim(),
       subject: String(formData.get("subject") ?? "").trim(),
       message: String(formData.get("message") ?? "").trim(),
     };
+
+    if (!payload.name || !payload.subject || !payload.email || !payload.phone || !payload.message) {
+      setState("error");
+      setMessage("Please fill all required fields.");
+      return;
+    }
+
+    if (!isEmail(payload.email)) {
+      setState("error");
+      setMessage("Please enter a valid email address.");
+      return;
+    }
+
+    if (!isPhone(payload.phone)) {
+      setState("error");
+      setMessage("Please enter a valid phone number.");
+      return;
+    }
 
     try {
       const response = await fetch("/api/contact", {
@@ -51,15 +79,43 @@ export default function ContactUsForm() {
     <form className="submit-form-grid contact-form-grid" onSubmit={handleSubmit}>
       <label>
         Name
-        <input type="text" name="name" className="subscribe-input" required />
-      </label>
-      <label>
-        Email
-        <input type="email" name="email" className="subscribe-input" required />
+        <input
+          type="text"
+          name="name"
+          className="subscribe-input"
+          placeholder="Full name"
+          required
+        />
       </label>
       <label>
         Subject
-        <input type="text" name="subject" className="subscribe-input" required />
+        <input
+          type="text"
+          name="subject"
+          className="subscribe-input"
+          placeholder="Subject"
+          required
+        />
+      </label>
+      <label>
+        Email
+        <input
+          type="email"
+          name="email"
+          className="subscribe-input"
+          placeholder="name@example.com"
+          required
+        />
+      </label>
+      <label>
+        Phone No
+        <input
+          type="tel"
+          name="phone"
+          className="subscribe-input"
+          placeholder="+91 XXXXXXXXXX"
+          required
+        />
       </label>
       <label className="full-span">
         Message

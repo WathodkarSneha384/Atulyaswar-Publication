@@ -4,6 +4,7 @@ import { Resend } from "resend";
 type ContactPayload = {
   name?: string;
   email?: string;
+  phone?: string;
   subject?: string;
   message?: string;
 };
@@ -19,6 +20,11 @@ function isEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
+function isPhone(value: string) {
+  const compact = value.replace(/[^\d+]/g, "");
+  return /^[+]?\d{8,15}$/.test(compact);
+}
+
 export async function POST(request: Request) {
   let payload: ContactPayload;
 
@@ -30,10 +36,11 @@ export async function POST(request: Request) {
 
   const name = clean(payload.name);
   const email = clean(payload.email);
+  const phone = clean(payload.phone);
   const subject = clean(payload.subject);
   const message = clean(payload.message);
 
-  if (!name || !email || !subject || !message) {
+  if (!name || !email || !phone || !subject || !message) {
     return NextResponse.json(
       { error: "Please fill all required fields." },
       { status: 400 },
@@ -43,6 +50,13 @@ export async function POST(request: Request) {
   if (!isEmail(email)) {
     return NextResponse.json(
       { error: "Please enter a valid email address." },
+      { status: 400 },
+    );
+  }
+
+  if (!isPhone(phone)) {
+    return NextResponse.json(
+      { error: "Please enter a valid phone number." },
       { status: 400 },
     );
   }
@@ -76,6 +90,7 @@ export async function POST(request: Request) {
         "",
         `Name: ${name}`,
         `Email: ${email}`,
+        `Phone: ${phone}`,
         `Subject: ${subject}`,
         "",
         "Message:",
