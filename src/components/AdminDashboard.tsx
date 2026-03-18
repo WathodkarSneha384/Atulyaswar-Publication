@@ -392,20 +392,134 @@ export default function AdminDashboard() {
 
     if (activeTab === "manuscripts") {
       return (
+        <div className="issue-table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Author</th>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {manuscripts.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.authorNames}</td>
+                  <td>{item.title}</td>
+                  <td>{item.status}</td>
+                  <td className="action-cell">
+                    <button type="button" className="icon-action-btn" title="View" aria-label="View" onClick={() => setViewData(item)}>
+                      <ActionIcon action="view" />
+                    </button>
+                    <button type="button" className="icon-action-btn" title="Edit" aria-label="Edit" onClick={() => setEditData(item)}>
+                      <ActionIcon action="edit" />
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-action-btn danger"
+                      title="Delete"
+                      aria-label="Delete"
+                      onClick={() =>
+                        requestDelete({
+                          id: item.id,
+                          tab: "manuscripts",
+                          label: item.title || item.authorNames,
+                        })}
+                    >
+                      <ActionIcon action="delete" />
+                    </button>
+                    <a href={`/api/manuscripts/${item.id}/paper`} target="_blank" rel="noreferrer">
+                      Paper
+                    </a>
+                    <a href={`/api/manuscripts/${item.id}/plagiarism`} target="_blank" rel="noreferrer">
+                      Plagiarism
+                    </a>
+                    {item.status === "pending" && (
+                      <>
+                        <button type="button" onClick={() => approveManuscriptSubmission(item.id)}>
+                          Approve
+                        </button>
+                        <button type="button" onClick={() => rejectManuscriptSubmission(item.id)}>
+                          Reject
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    if (activeTab === "issues") {
+      return (
+        <div className="issue-table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Issue</th>
+                <th>Status</th>
+                <th>Entries</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {issues.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.title}</td>
+                  <td>{item.status}</td>
+                  <td>{approvedSubmissionMap.get(item.id)?.length ?? 0}</td>
+                  <td className="action-cell">
+                    <button type="button" className="icon-action-btn" title="View" aria-label="View" onClick={() => setViewData(item)}>
+                      <ActionIcon action="view" />
+                    </button>
+                    <button type="button" className="icon-action-btn" title="Edit" aria-label="Edit" onClick={() => setEditData(item)}>
+                      <ActionIcon action="edit" />
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-action-btn danger"
+                      title="Delete"
+                      aria-label="Delete"
+                      onClick={() =>
+                        requestDelete({
+                          id: item.id,
+                          tab: "issues",
+                          label: item.title,
+                        })}
+                    >
+                      <ActionIcon action="delete" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    return (
+      <div className="issue-table-wrap">
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Author</th>
+              <th>Issue</th>
               <th>Title</th>
+              <th>Author</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
-            {manuscripts.map((item) => (
+            {entrySubmissions.map((item) => (
               <tr key={item.id}>
-                <td>{item.authorNames}</td>
+                <td>{item.issueTitle}</td>
                 <td>{item.title}</td>
+                <td>{item.author}</td>
                 <td>{item.status}</td>
                 <td className="action-cell">
                   <button type="button" className="icon-action-btn" title="View" aria-label="View" onClick={() => setViewData(item)}>
@@ -422,24 +536,25 @@ export default function AdminDashboard() {
                     onClick={() =>
                       requestDelete({
                         id: item.id,
-                        tab: "manuscripts",
-                        label: item.title || item.authorNames,
+                        tab: "entrySubmissions",
+                        label: item.title,
                       })}
                   >
                     <ActionIcon action="delete" />
                   </button>
-                  <a href={`/api/manuscripts/${item.id}/paper`} target="_blank" rel="noreferrer">
-                    Paper
-                  </a>
-                  <a href={`/api/manuscripts/${item.id}/plagiarism`} target="_blank" rel="noreferrer">
-                    Plagiarism
+                  <a
+                    href={item.pdfUrl ?? `/api/issue-entry-submissions/${item.id}/pdf`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    PDF
                   </a>
                   {item.status === "pending" && (
                     <>
-                      <button type="button" onClick={() => approveManuscriptSubmission(item.id)}>
+                      <button type="button" onClick={() => approveEntrySubmission(item.id)}>
                         Approve
                       </button>
-                      <button type="button" onClick={() => rejectManuscriptSubmission(item.id)}>
+                      <button type="button" onClick={() => rejectEntrySubmission(item.id)}>
                         Reject
                       </button>
                     </>
@@ -449,116 +564,7 @@ export default function AdminDashboard() {
             ))}
           </tbody>
         </table>
-      );
-    }
-
-    if (activeTab === "issues") {
-      return (
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Issue</th>
-              <th>Status</th>
-              <th>Entries</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {issues.map((item) => (
-              <tr key={item.id}>
-                <td>{item.title}</td>
-                <td>{item.status}</td>
-                <td>{approvedSubmissionMap.get(item.id)?.length ?? 0}</td>
-                <td className="action-cell">
-                  <button type="button" className="icon-action-btn" title="View" aria-label="View" onClick={() => setViewData(item)}>
-                    <ActionIcon action="view" />
-                  </button>
-                  <button type="button" className="icon-action-btn" title="Edit" aria-label="Edit" onClick={() => setEditData(item)}>
-                    <ActionIcon action="edit" />
-                  </button>
-                  <button
-                    type="button"
-                    className="icon-action-btn danger"
-                    title="Delete"
-                    aria-label="Delete"
-                    onClick={() =>
-                      requestDelete({
-                        id: item.id,
-                        tab: "issues",
-                        label: item.title,
-                      })}
-                  >
-                    <ActionIcon action="delete" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      );
-    }
-
-    return (
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>Issue</th>
-            <th>Title</th>
-            <th>Author</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {entrySubmissions.map((item) => (
-            <tr key={item.id}>
-              <td>{item.issueTitle}</td>
-              <td>{item.title}</td>
-              <td>{item.author}</td>
-              <td>{item.status}</td>
-              <td className="action-cell">
-                <button type="button" className="icon-action-btn" title="View" aria-label="View" onClick={() => setViewData(item)}>
-                  <ActionIcon action="view" />
-                </button>
-                <button type="button" className="icon-action-btn" title="Edit" aria-label="Edit" onClick={() => setEditData(item)}>
-                  <ActionIcon action="edit" />
-                </button>
-                <button
-                  type="button"
-                  className="icon-action-btn danger"
-                  title="Delete"
-                  aria-label="Delete"
-                  onClick={() =>
-                    requestDelete({
-                      id: item.id,
-                      tab: "entrySubmissions",
-                      label: item.title,
-                    })}
-                >
-                  <ActionIcon action="delete" />
-                </button>
-                <a
-                  href={item.pdfUrl ?? `/api/issue-entry-submissions/${item.id}/pdf`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  PDF
-                </a>
-                {item.status === "pending" && (
-                  <>
-                    <button type="button" onClick={() => approveEntrySubmission(item.id)}>
-                      Approve
-                    </button>
-                    <button type="button" onClick={() => rejectEntrySubmission(item.id)}>
-                      Reject
-                    </button>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      </div>
     );
   }
 

@@ -1464,10 +1464,13 @@ a {
 
 .contact-form-grid {
   margin-top: 1rem;
-  padding: 1rem;
-  border: 1px solid #ead9e6;
-  border-radius: 14px;
+  max-width: 860px;
+  margin-inline: auto;
+  padding: 1.1rem;
+  border: 1px solid #e6d3e1;
+  border-radius: 16px;
   background: linear-gradient(180deg, #fff 0%, #fcf7fb 100%);
+  box-shadow: 0 12px 24px rgba(95, 24, 77, 0.12);
 }
 
 .contact-form-grid label {
@@ -1489,8 +1492,10 @@ a {
 }
 
 .contact-submit-btn {
-  justify-self: start;
-  min-width: 160px;
+  grid-column: 1 / -1;
+  justify-self: center;
+  min-width: 180px;
+  padding-inline: 1.2rem;
 }
 
 .contact-submit-btn:disabled {
@@ -1614,6 +1619,7 @@ a {
   border-radius: 12px;
   padding: 0.7rem;
   background: #fff;
+  overflow-x: auto;
 }
 
 .issue-create-inline {
@@ -1638,6 +1644,7 @@ a {
 .admin-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 640px;
 }
 
 .admin-table th,
@@ -2082,12 +2089,20 @@ a {
   .top-navbar-secondary-row {
     width: 100%;
     flex-wrap: nowrap;
-    overflow-x: visible;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .top-row-links .menu-item,
   .top-navbar-secondary-row .menu-item {
-    flex: 0 1 auto;
+    flex: 0 0 auto;
+  }
+
+  .top-row-links {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
   }
 
   .home-hero {
@@ -2096,6 +2111,12 @@ a {
 
   .journal-search-row {
     justify-content: flex-start;
+  }
+}
+
+@media (max-width: 1100px) {
+  .admin-layout {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -2234,6 +2255,22 @@ a {
 
   .archive-search-input {
     width: 100%;
+  }
+
+  .subscribe-input {
+    min-width: 0;
+  }
+
+  .submit-button-centered,
+  .issue-create-inline .subscribe-button {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .contact-submit-btn {
+    width: auto;
+    min-width: 170px;
+    justify-self: center;
   }
 }
 

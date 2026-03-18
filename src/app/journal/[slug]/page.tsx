@@ -344,9 +344,6 @@ async function renderMenuPage(slug: string) {
     return (
       <>
         <h2 className="menu-page-title">Contact Us</h2>
-        <p className="contact-intro">
-          Contact form having: Name, Email, Subject, Message, Send
-        </p>
         <ContactUsForm />
       </>
     );
