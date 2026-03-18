@@ -19,21 +19,12 @@ export default function IssueEntrySubmissionForm({ issueId }: Props) {
 
     const form = event.currentTarget;
     const formData = new FormData(form);
-
-    const payload = {
-      issueId,
-      title: String(formData.get("title") ?? "").trim(),
-      author: String(formData.get("author") ?? "").trim(),
-      pageNo: String(formData.get("pageNo") ?? "").trim(),
-      pdfUrl: String(formData.get("pdfUrl") ?? "").trim(),
-      submitterEmail: String(formData.get("submitterEmail") ?? "").trim(),
-    };
+    formData.set("issueId", issueId);
 
     try {
       const response = await fetch("/api/issue-entry-submissions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: formData,
       });
       const data = (await response.json()) as { ok?: boolean; error?: string };
       if (!response.ok || !data.ok) {
@@ -82,8 +73,14 @@ export default function IssueEntrySubmissionForm({ issueId }: Props) {
           />
         </label>
         <label className="full-span">
-          PDF URL
-          <input type="url" className="subscribe-input" name="pdfUrl" required />
+          Upload PDF
+          <input
+            type="file"
+            className="subscribe-input"
+            name="pdfFile"
+            accept=".pdf,application/pdf"
+            required
+          />
         </label>
         <button type="submit" className="subscribe-button" disabled={state === "submitting"}>
           {state === "submitting" ? "Submitting..." : "Submit Entry"}

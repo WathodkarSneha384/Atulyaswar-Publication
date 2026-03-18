@@ -8,7 +8,7 @@ type TabKey = "manuscripts" | "issues" | "entrySubmissions";
 type ManuscriptItem = {
   id: string;
   createdAt: string;
-  status: "pending" | "approved";
+  status: "pending" | "approved" | "rejected";
   authorNames: string;
   designations: string[];
   title: string;
@@ -16,7 +16,10 @@ type ManuscriptItem = {
   phone: string;
   address: string;
   paperFileName: string;
+  paperFileMimeType?: string;
   plagiarismFileName: string;
+  plagiarismFileMimeType?: string;
+  rejectedReason?: string;
 };
 
 type IssueEntry = {
@@ -46,13 +49,85 @@ type IssueEntrySubmission = {
   title: string;
   author: string;
   pageNo: string;
-  pdfUrl: string;
+  pdfUrl?: string;
+  pdfFileName?: string;
+  pdfMimeType?: string;
+  pdfBase64?: string;
   submitterEmail: string;
   createdAt: string;
-  status: "pending" | "approved";
+  status: "pending" | "approved" | "rejected";
+  rejectedReason?: string;
 };
 
 type RowData = ManuscriptItem | IssueItem | IssueEntrySubmission;
+type IconAction = "view" | "edit" | "delete";
+type DeleteTarget = {
+  id: string;
+  tab: TabKey;
+  label: string;
+};
+
+function isManuscriptRow(data: RowData): data is ManuscriptItem {
+  return "paperFileName" in data && "plagiarismFileName" in data;
+}
+
+function ActionIcon({ action }: { action: IconAction }) {
+  if (action === "view") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="action-icon">
+        <path
+          d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+        <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="2" />
+      </svg>
+    );
+  }
+
+  if (action === "edit") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="action-icon">
+        <path
+          d="M12 20h9"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        <path
+          d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="action-icon">
+      <polyline
+        points="3 6 5 6 21 6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M19 6l-1 14H6L5 6m3 0V4h8v2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 const tabs: { key: TabKey; label: string }[] = [
   { key: "manuscripts", label: "Manuscripts" },
@@ -73,11 +148,9 @@ export default function AdminDashboard() {
 
   const [viewData, setViewData] = useState<RowData | null>(null);
   const [editData, setEditData] = useState<RowData | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
 
   const [newIssue, setNewIssue] = useState({
-    year: "",
-    volume: "",
-    issueNo: "",
     title: "",
   });
 
@@ -86,6 +159,17 @@ export default function AdminDashboard() {
     if (activeTab === "issues") return issues;
     return entrySubmissions;
   }, [activeTab, manuscripts, issues, entrySubmissions]);
+
+  const approvedSubmissionMap = useMemo(() => {
+    const map = new Map<string, IssueEntrySubmission[]>();
+    for (const item of entrySubmissions) {
+      if (item.status !== "approved") continue;
+      const existing = map.get(item.issueId) ?? [];
+      existing.push(item);
+      map.set(item.issueId, existing);
+    }
+    return map;
+  }, [entrySubmissions]);
 
   const loadCurrentTabData = useCallback(async (tab: TabKey) => {
     setLoading(true);
@@ -99,10 +183,24 @@ export default function AdminDashboard() {
         if (!response.ok) throw new Error(data.error ?? "Failed to load manuscripts.");
         setManuscripts(data.items ?? []);
       } else if (tab === "issues") {
-        const response = await fetch("/api/issues?scope=all");
-        const data = (await response.json()) as { items?: IssueItem[]; error?: string };
-        if (!response.ok) throw new Error(data.error ?? "Failed to load issues.");
-        setIssues(data.items ?? []);
+        const [issuesResponse, submissionsResponse] = await Promise.all([
+          fetch("/api/issues?scope=all"),
+          fetch("/api/issue-entry-submissions?scope=all"),
+        ]);
+
+        const issuesData = (await issuesResponse.json()) as { items?: IssueItem[]; error?: string };
+        if (!issuesResponse.ok) throw new Error(issuesData.error ?? "Failed to load issues.");
+
+        const submissionsData = (await submissionsResponse.json()) as {
+          items?: IssueEntrySubmission[];
+          error?: string;
+        };
+        if (!submissionsResponse.ok) {
+          throw new Error(submissionsData.error ?? "Failed to load issue submissions.");
+        }
+
+        setIssues(issuesData.items ?? []);
+        setEntrySubmissions(submissionsData.items ?? []);
       } else {
         const response = await fetch("/api/issue-entry-submissions?scope=all");
         const data = (await response.json()) as { items?: IssueEntrySubmission[]; error?: string };
@@ -126,14 +224,14 @@ export default function AdminDashboard() {
     router.refresh();
   }
 
-  async function deleteRow(id: string) {
+  async function deleteRow(id: string, tab: TabKey) {
     setError("");
     setSuccess("");
 
     const endpoint =
-      activeTab === "manuscripts"
+      tab === "manuscripts"
         ? `/api/manuscripts/${id}`
-        : activeTab === "issues"
+        : tab === "issues"
           ? `/api/issues/${id}`
           : `/api/issue-entry-submissions/${id}`;
 
@@ -144,7 +242,18 @@ export default function AdminDashboard() {
       return;
     }
     setSuccess("Deleted successfully.");
-    await loadCurrentTabData(activeTab);
+    await loadCurrentTabData(tab);
+  }
+
+  function requestDelete(target: DeleteTarget) {
+    setDeleteTarget(target);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    const { id, tab } = deleteTarget;
+    setDeleteTarget(null);
+    await deleteRow(id, tab);
   }
 
   async function saveEdit(event: FormEvent<HTMLFormElement>) {
@@ -203,6 +312,59 @@ export default function AdminDashboard() {
     await loadCurrentTabData("issues");
   }
 
+  async function rejectEntrySubmission(id: string) {
+    const response = await fetch(`/api/issue-entry-submissions/${id}/reject`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: "Rejected by admin" }),
+    });
+    const data = (await response.json()) as { ok?: boolean; error?: string };
+    if (!response.ok || !data.ok) {
+      setError(data.error ?? "Reject failed.");
+      return;
+    }
+    setSuccess("Submission rejected.");
+    await loadCurrentTabData("entrySubmissions");
+  }
+
+  async function approveManuscriptSubmission(id: string) {
+    setError("");
+    setSuccess("");
+    const response = await fetch(`/api/manuscripts/${id}/approve`, {
+      method: "PATCH",
+    });
+    const data = (await response.json()) as { ok?: boolean; error?: string };
+    if (!response.ok || !data.ok) {
+      setError(data.error ?? "Approve failed.");
+      return;
+    }
+    setSuccess("Manuscript approved.");
+    await loadCurrentTabData("manuscripts");
+    if (viewData && viewData.id === id) {
+      setViewData(null);
+    }
+  }
+
+  async function rejectManuscriptSubmission(id: string) {
+    setError("");
+    setSuccess("");
+    const response = await fetch(`/api/manuscripts/${id}/reject`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: "Rejected by admin" }),
+    });
+    const data = (await response.json()) as { ok?: boolean; error?: string };
+    if (!response.ok || !data.ok) {
+      setError(data.error ?? "Reject failed.");
+      return;
+    }
+    setSuccess("Manuscript rejected.");
+    await loadCurrentTabData("manuscripts");
+    if (viewData && viewData.id === id) {
+      setViewData(null);
+    }
+  }
+
   async function createIssue(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -218,7 +380,7 @@ export default function AdminDashboard() {
       setError(data.error ?? "Failed to create issue.");
       return;
     }
-    setNewIssue({ year: "", volume: "", issueNo: "", title: "" });
+    setNewIssue({ title: "" });
     setSuccess("Issue created. Previous current issue moved to archive.");
     await loadCurrentTabData("issues");
   }
@@ -246,9 +408,42 @@ export default function AdminDashboard() {
                 <td>{item.title}</td>
                 <td>{item.status}</td>
                 <td className="action-cell">
-                  <button type="button" onClick={() => setViewData(item)}>View</button>
-                  <button type="button" onClick={() => setEditData(item)}>Edit</button>
-                  <button type="button" onClick={() => deleteRow(item.id)}>Delete</button>
+                  <button type="button" className="icon-action-btn" title="View" aria-label="View" onClick={() => setViewData(item)}>
+                    <ActionIcon action="view" />
+                  </button>
+                  <button type="button" className="icon-action-btn" title="Edit" aria-label="Edit" onClick={() => setEditData(item)}>
+                    <ActionIcon action="edit" />
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-action-btn danger"
+                    title="Delete"
+                    aria-label="Delete"
+                    onClick={() =>
+                      requestDelete({
+                        id: item.id,
+                        tab: "manuscripts",
+                        label: item.title || item.authorNames,
+                      })}
+                  >
+                    <ActionIcon action="delete" />
+                  </button>
+                  <a href={`/api/manuscripts/${item.id}/paper`} target="_blank" rel="noreferrer">
+                    Paper
+                  </a>
+                  <a href={`/api/manuscripts/${item.id}/plagiarism`} target="_blank" rel="noreferrer">
+                    Plagiarism
+                  </a>
+                  {item.status === "pending" && (
+                    <>
+                      <button type="button" onClick={() => approveManuscriptSubmission(item.id)}>
+                        Approve
+                      </button>
+                      <button type="button" onClick={() => rejectManuscriptSubmission(item.id)}>
+                        Reject
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}
@@ -273,11 +468,28 @@ export default function AdminDashboard() {
               <tr key={item.id}>
                 <td>{item.title}</td>
                 <td>{item.status}</td>
-                <td>{item.entries.length}</td>
+                <td>{approvedSubmissionMap.get(item.id)?.length ?? 0}</td>
                 <td className="action-cell">
-                  <button type="button" onClick={() => setViewData(item)}>View</button>
-                  <button type="button" onClick={() => setEditData(item)}>Edit</button>
-                  <button type="button" onClick={() => deleteRow(item.id)}>Delete</button>
+                  <button type="button" className="icon-action-btn" title="View" aria-label="View" onClick={() => setViewData(item)}>
+                    <ActionIcon action="view" />
+                  </button>
+                  <button type="button" className="icon-action-btn" title="Edit" aria-label="Edit" onClick={() => setEditData(item)}>
+                    <ActionIcon action="edit" />
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-action-btn danger"
+                    title="Delete"
+                    aria-label="Delete"
+                    onClick={() =>
+                      requestDelete({
+                        id: item.id,
+                        tab: "issues",
+                        label: item.title,
+                      })}
+                  >
+                    <ActionIcon action="delete" />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -292,6 +504,7 @@ export default function AdminDashboard() {
           <tr>
             <th>Issue</th>
             <th>Title</th>
+            <th>Author</th>
             <th>Status</th>
             <th>Action</th>
           </tr>
@@ -301,15 +514,45 @@ export default function AdminDashboard() {
             <tr key={item.id}>
               <td>{item.issueTitle}</td>
               <td>{item.title}</td>
+              <td>{item.author}</td>
               <td>{item.status}</td>
               <td className="action-cell">
-                <button type="button" onClick={() => setViewData(item)}>View</button>
-                <button type="button" onClick={() => setEditData(item)}>Edit</button>
-                <button type="button" onClick={() => deleteRow(item.id)}>Delete</button>
+                <button type="button" className="icon-action-btn" title="View" aria-label="View" onClick={() => setViewData(item)}>
+                  <ActionIcon action="view" />
+                </button>
+                <button type="button" className="icon-action-btn" title="Edit" aria-label="Edit" onClick={() => setEditData(item)}>
+                  <ActionIcon action="edit" />
+                </button>
+                <button
+                  type="button"
+                  className="icon-action-btn danger"
+                  title="Delete"
+                  aria-label="Delete"
+                  onClick={() =>
+                    requestDelete({
+                      id: item.id,
+                      tab: "entrySubmissions",
+                      label: item.title,
+                    })}
+                >
+                  <ActionIcon action="delete" />
+                </button>
+                <a
+                  href={item.pdfUrl ?? `/api/issue-entry-submissions/${item.id}/pdf`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  PDF
+                </a>
                 {item.status === "pending" && (
-                  <button type="button" onClick={() => approveEntrySubmission(item.id)}>
-                    Approve
-                  </button>
+                  <>
+                    <button type="button" onClick={() => approveEntrySubmission(item.id)}>
+                      Approve
+                    </button>
+                    <button type="button" onClick={() => rejectEntrySubmission(item.id)}>
+                      Reject
+                    </button>
+                  </>
                 )}
               </td>
             </tr>
@@ -364,31 +607,14 @@ export default function AdminDashboard() {
             <form className="issue-create-inline" onSubmit={createIssue}>
               <input
                 className="subscribe-input"
-                placeholder="Year"
-                value={newIssue.year}
-                onChange={(e) => setNewIssue((p) => ({ ...p, year: e.target.value }))}
-                required
-              />
-              <input
-                className="subscribe-input"
-                placeholder="Volume"
-                value={newIssue.volume}
-                onChange={(e) => setNewIssue((p) => ({ ...p, volume: e.target.value }))}
-                required
-              />
-              <input
-                className="subscribe-input"
-                placeholder="Issue No"
-                value={newIssue.issueNo}
-                onChange={(e) => setNewIssue((p) => ({ ...p, issueNo: e.target.value }))}
-                required
-              />
-              <input
-                className="subscribe-input"
-                placeholder="Title (optional)"
+                placeholder="Issue title"
                 value={newIssue.title}
                 onChange={(e) => setNewIssue((p) => ({ ...p, title: e.target.value }))}
+                required
               />
+              <p className="admin-auto-issue-note">
+                Volume/Issue are auto-generated (Issue 1: Jan-Jun, Issue 2: Jul-Dec).
+              </p>
               <button type="submit" className="subscribe-button">Create Issue</button>
             </form>
           )}
@@ -398,7 +624,113 @@ export default function AdminDashboard() {
           {viewData && (
             <div className="admin-drawer">
               <h3>View Entry</h3>
-              <pre>{JSON.stringify(viewData, null, 2)}</pre>
+              <div className="issue-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Field</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(viewData)
+                      .filter(([key]) => !["entries", "pdfBase64", "pdfMimeType"].includes(key))
+                      .map(([key, value]) => (
+                        <tr key={key}>
+                          <td>{key}</td>
+                          <td>
+                            {Array.isArray(value)
+                              ? value.join(", ")
+                              : typeof value === "object" && value !== null
+                                ? JSON.stringify(value)
+                                : String(value ?? "")}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {"entries" in viewData && Array.isArray(viewData.entries) && (
+                <div className="issue-table-wrap">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Sr. No.</th>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Page No.</th>
+                        <th>PDF</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(approvedSubmissionMap.get(viewData.id) ?? []).length === 0 ? (
+                        <tr>
+                          <td colSpan={5}>No approved submissions for this issue.</td>
+                        </tr>
+                      ) : (
+                        (approvedSubmissionMap.get(viewData.id) ?? []).map((entry, index) => (
+                          <tr key={entry.id}>
+                            <td>{index + 1}</td>
+                            <td>{entry.title}</td>
+                            <td>{entry.author}</td>
+                            <td>{entry.pageNo}</td>
+                            <td>
+                              <a
+                                href={entry.pdfUrl ?? `/api/issue-entry-submissions/${entry.id}/pdf`}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                Read
+                              </a>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {isManuscriptRow(viewData) && (
+                <div className="admin-toolbar">
+                  <a
+                    href={`/api/manuscripts/${viewData.id}/paper`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ghost-admin-btn"
+                  >
+                    View Paper
+                  </a>
+                  <a
+                    href={`/api/manuscripts/${viewData.id}/plagiarism`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ghost-admin-btn"
+                  >
+                    View Plagiarism Report
+                  </a>
+                  {viewData.status === "pending" && (
+                    <>
+                      <button
+                        type="button"
+                        className="subscribe-button"
+                        onClick={() => approveManuscriptSubmission(viewData.id)}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost-admin-btn"
+                        onClick={() => rejectManuscriptSubmission(viewData.id)}
+                      >
+                        Reject
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
               <button type="button" className="subscribe-button" onClick={() => setViewData(null)}>
                 Close
               </button>
@@ -409,7 +741,17 @@ export default function AdminDashboard() {
             <form className="admin-drawer" onSubmit={saveEdit}>
               <h3>Edit Entry</h3>
               {Object.entries(editData)
-                .filter(([key]) => !["id", "createdAt", "entries", "status"].includes(key))
+                .filter(
+                  ([key]) =>
+                    ![
+                      "id",
+                      "createdAt",
+                      "entries",
+                      "status",
+                      "pdfBase64",
+                      "pdfMimeType",
+                    ].includes(key),
+                )
                 .map(([key, value]) => (
                   <label key={key}>
                     {key}
@@ -430,6 +772,32 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      {deleteTarget && (
+        <div className="admin-confirm-backdrop" role="dialog" aria-modal="true">
+          <div className="admin-confirm-modal">
+            <h3>Confirm Delete</h3>
+            <p>
+              Do you really want to delete
+              {" "}
+              <strong>{deleteTarget.label}</strong>
+              ?
+            </p>
+            <div className="admin-confirm-actions">
+              <button type="button" className="subscribe-button" onClick={confirmDelete}>
+                Yes
+              </button>
+              <button
+                type="button"
+                className="ghost-admin-btn"
+                onClick={() => setDeleteTarget(null)}
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

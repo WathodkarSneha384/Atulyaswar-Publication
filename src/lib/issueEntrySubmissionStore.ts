@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { kv } from "@vercel/kv";
 
-export type IssueEntrySubmissionStatus = "pending" | "approved";
+export type IssueEntrySubmissionStatus = "pending" | "approved" | "rejected";
 
 export type IssueEntrySubmission = {
   id: string;
@@ -12,10 +12,23 @@ export type IssueEntrySubmission = {
   title: string;
   author: string;
   pageNo: string;
-  pdfUrl: string;
+  pdfUrl?: string;
+  pdfFileName?: string;
+  pdfMimeType?: string;
+  pdfBase64?: string;
   submitterEmail: string;
+  rejectedReason?: string;
   createdAt: string;
   status: IssueEntrySubmissionStatus;
+};
+
+export type ApprovedIssueEntry = {
+  id: string;
+  srNo: number;
+  title: string;
+  author: string;
+  pageNo: string;
+  readUrl: string;
 };
 
 type NewSubmissionInput = Omit<
@@ -103,6 +116,21 @@ export async function approveIssueEntrySubmission(id: string) {
   return updated;
 }
 
+export async function rejectIssueEntrySubmission(id: string, reason?: string) {
+  const all = await readAll();
+  const index = all.findIndex((item) => item.id === id);
+  if (index === -1) return null;
+
+  const updated: IssueEntrySubmission = {
+    ...all[index],
+    status: "rejected",
+    rejectedReason: reason?.trim() || all[index].rejectedReason,
+  };
+  all[index] = updated;
+  await writeAll(all);
+  return updated;
+}
+
 export async function getIssueEntrySubmissionById(id: string) {
   const all = await readAll();
   return all.find((item) => item.id === id) ?? null;
@@ -131,4 +159,20 @@ export async function deleteIssueEntrySubmission(id: string) {
   all.splice(index, 1);
   await writeAll(all);
   return true;
+}
+
+export async function listApprovedIssueEntriesForIssue(issueId: string) {
+  const all = await readAll();
+  const approved = all.filter(
+    (item) => item.issueId === issueId && item.status === "approved",
+  );
+
+  return approved.map<ApprovedIssueEntry>((item, index) => ({
+    id: item.id,
+    srNo: index + 1,
+    title: item.title,
+    author: item.author,
+    pageNo: item.pageNo,
+    readUrl: item.pdfUrl ?? `/api/issue-entry-submissions/${item.id}/pdf`,
+  }));
 }

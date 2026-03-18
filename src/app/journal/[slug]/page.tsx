@@ -1,10 +1,20 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import ContactUsForm from "@/components/ContactUsForm";
+import ArchiveIssuesClient from "@/components/ArchiveIssuesClient";
 import IssueEntrySubmissionForm from "@/components/IssueEntrySubmissionForm";
 import SubmitManuscriptForm from "@/components/SubmitManuscriptForm";
 import JournalShell from "@/components/JournalShell";
-import { getArchiveIssues, getCurrentIssue } from "@/lib/issueStore";
+import { listApprovedIssueEntriesForIssue } from "@/lib/issueEntrySubmissionStore";
+import { getArchiveIssues, getCurrentIssue, listIssues } from "@/lib/issueStore";
 import { listManuscripts } from "@/lib/manuscriptStore";
+import { getVolumeIssueByYearAndIssue, getVolumeIssueDetails } from "@/lib/volumeIssue";
+import archiveDummyData from "@/data/archiveDummyData.json";
+import drSanikaImage from "../../../../Asset/Board_Members/Dr. Sanika Goregaonkar.jpg";
+import drVilasImage from "../../../../Asset/Board_Members/Dr. Vilas Jadhav.png";
+import profSheetalImage from "../../../../Asset/Board_Members/Prof. Sheetal More.jpg";
+import profSuneeraImage from "../../../../Asset/Board_Members/Prof. Suneera Kasliwal.JPG";
+import ptVidyadharImage from "../../../../Asset/Board_Members/Pt. Vidyadhar Vyas.JPG";
 
 type JournalSubPageProps = {
   params: Promise<{ slug: string }>;
@@ -62,43 +72,88 @@ async function renderMenuPage(slug: string) {
         <h2>Board Members</h2>
         <div className="board-list">
           <article className="board-item">
-            <h3>1. Pt. Vidyadhar Vyas</h3>
-            <p>Editorial Advisor</p>
-            <p>Senior Vocalist – Gwalior Gharana</p>
-            <p>Ex. Vice Chancellor - Bhatkhande Music Institute, Lucknow</p>
-            <p>Ex. Executive Director – ITC Sangeet Research Academy, Kolkata</p>
+            <div className="board-photo-wrap">
+              <Image
+                src={ptVidyadharImage}
+                alt="Pt. Vidyadhar Vyas"
+                className="board-photo"
+              />
+            </div>
+            <h3>Pt. Vidyadhar Vyas</h3>
+            <p className="board-role">Editorial Advisor</p>
+            <p className="board-specialization">Senior Vocalist – Gwalior Gharana</p>
+            <ul className="board-meta">
+              <li>Ex. Vice Chancellor - Bhatkhande Music Institute, Lucknow</li>
+              <li>Ex. Executive Director – ITC Sangeet Research Academy, Kolkata</li>
+            </ul>
           </article>
 
           <article className="board-item">
-            <h3>2. Prof. Suneera Kasliwal</h3>
-            <p>Editorial Advisor</p>
-            <p>Senior Artist (Sitar)</p>
-            <p>Ex. Dean and Ex. Head, Department of Music, University of Delhi</p>
+            <div className="board-photo-wrap">
+              <Image
+                src={profSuneeraImage}
+                alt="Prof. Suneera Kasliwal"
+                className="board-photo"
+              />
+            </div>
+            <h3>Prof. Suneera Kasliwal</h3>
+            <p className="board-role">Editorial Advisor</p>
+            <p className="board-specialization">Senior Artist (Sitar)</p>
+            <ul className="board-meta">
+              <li>Ex. Dean and Ex. Head, Department of Music, University of Delhi</li>
+            </ul>
           </article>
 
           <article className="board-item">
-            <h3>3. Prof. Sheetal More</h3>
-            <p>Member Editorial Board</p>
-            <p>Head, Department of Music, SNDT Women&apos;s University, Pune</p>
-            <p>Senior Academician</p>
+            <div className="board-photo-wrap">
+              <Image
+                src={profSheetalImage}
+                alt="Prof. Sheetal More"
+                className="board-photo"
+              />
+            </div>
+            <h3>Prof. Sheetal More</h3>
+            <p className="board-role">Member Editorial Board</p>
+            <p className="board-specialization">Senior Academician</p>
+            <ul className="board-meta">
+              <li>Head, Department of Music, SNDT Women&apos;s University, Pune</li>
+            </ul>
           </article>
 
           <article className="board-item">
-            <h3>4. Dr. Vilas Jadhav</h3>
-            <p>Member Editorial Board</p>
-            <p>
-              Deputy Librarian, BMK Knowledge Resource Centre (Pune Branch),
-              SNDT Women&apos;s University, Pune
-            </p>
-            <p>Atulyaswar Publication</p>
-            <p>Pune</p>
+            <div className="board-photo-wrap">
+              <Image
+                src={drVilasImage}
+                alt="Dr. Vilas Jadhav"
+                className="board-photo board-photo-contain"
+              />
+            </div>
+            <h3>Dr. Vilas Jadhav</h3>
+            <p className="board-role">Member Editorial Board</p>
+            <ul className="board-meta">
+              <li>
+                Deputy Librarian, BMK Knowledge Resource Centre (Pune Branch),
+                SNDT Women&apos;s University, Pune
+              </li>
+              <li>Atulyaswar Publication</li>
+              <li>Pune</li>
+            </ul>
           </article>
 
           <article className="board-item">
-            <h3>5. Dr. Sanika Goregaonkar</h3>
-            <p>Editor-in-chief, Managing Director</p>
-            <p>Vocalist – Gwalior Gharana</p>
-            <p>Assistant Professor, SNDT Women&apos;s University, Pune</p>
+            <div className="board-photo-wrap">
+              <Image
+                src={drSanikaImage}
+                alt="Dr. Sanika Goregaonkar"
+                className="board-photo"
+              />
+            </div>
+            <h3>Dr. Sanika Goregaonkar</h3>
+            <p className="board-role">Editor-in-chief, Managing Director</p>
+            <p className="board-specialization">Vocalist – Gwalior Gharana</p>
+            <ul className="board-meta">
+              <li>Assistant Professor, SNDT Women&apos;s University, Pune</li>
+            </ul>
           </article>
         </div>
       </>
@@ -107,33 +162,38 @@ async function renderMenuPage(slug: string) {
 
   if (slug === "current-issue") {
     const currentIssue = await getCurrentIssue();
+    const approvedEntries = currentIssue
+      ? await listApprovedIssueEntriesForIssue(currentIssue.id)
+      : [];
+    const fallbackVolumeIssue = getVolumeIssueDetails(new Date());
+    const issueFromData = Number(currentIssue?.issueNo);
+    const issueNumber: 1 | 2 = issueFromData === 2 ? 2 : 1;
+    const yearFromData = Number(currentIssue?.year);
+    const issueYear = Number.isFinite(yearFromData) ? yearFromData : fallbackVolumeIssue.year;
+    const volumeIssue = getVolumeIssueByYearAndIssue(issueYear, issueNumber);
 
     return (
       <>
         <h2>Current Issue</h2>
-        <p>
-          <strong>atulyaswarpublication@gmail.com</strong>
-        </p>
-        <p>
-          <strong>+91 9765556976</strong>
-        </p>
-        <p>
-          I will provide updates and status of the first issue soon. But the
-          structure will be as follows.
-        </p>
-        <ul className="journal-list">
-          <li>Index of issue (same as a reference site)</li>
-          <li>Sr. No., Title, Author, Page no, Read (Clickable)</li>
-          <li>After clicking on Read: Show the Research paper pdf</li>
-          <li>Download PDF</li>
-          <li>Share link</li>
-        </ul>
         {currentIssue ? (
           <>
+            <p className="issue-title-row">
+              <strong>Atulyaswar</strong>
+              <span aria-hidden="true"> | </span>
+              <span>A peer reviewed, Indian Music Journal</span>
+            </p>
             <p>
-              <strong>
-                Latest Issue: {currentIssue.title} ({currentIssue.year})
-              </strong>
+              <strong>{volumeIssue.headerLabel}</strong>
+            </p>
+            <p>
+              <strong>Publication Window:</strong> {volumeIssue.periodLabel}
+            </p>
+            <p>
+              <strong>Volume No.</strong> {volumeIssue.volumeNumber} | <strong>Issue No.</strong>{" "}
+              {volumeIssue.issueNumber}
+            </p>
+            <p>
+              <strong>Title:</strong> {currentIssue.title}
             </p>
             <div className="issue-table-wrap">
               <table className="issue-table">
@@ -147,7 +207,7 @@ async function renderMenuPage(slug: string) {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentIssue.entries.length === 0 ? (
+                  {approvedEntries.length === 0 ? (
                     <tr>
                       <td>1</td>
                       <td>Issue content will be added soon</td>
@@ -156,14 +216,19 @@ async function renderMenuPage(slug: string) {
                       <td>-</td>
                     </tr>
                   ) : (
-                    currentIssue.entries.map((entry) => (
+                    approvedEntries.map((entry) => (
                       <tr key={entry.id}>
                         <td>{entry.srNo}</td>
                         <td>{entry.title}</td>
                         <td>{entry.author}</td>
                         <td>{entry.pageNo}</td>
                         <td>
-                          <a href={entry.pdfUrl} target="_blank" rel="noreferrer" className="inline-link">
+                          <a
+                            href={entry.readUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-link"
+                          >
                             Read
                           </a>
                         </td>
@@ -183,60 +248,13 @@ async function renderMenuPage(slug: string) {
   }
 
   if (slug === "archive") {
-    const archiveIssues = await getArchiveIssues();
+    const [archiveIssues, allIssues] = await Promise.all([getArchiveIssues(), listIssues()]);
+    const archiveEnabled = allIssues.length >= 2;
+    const issuesForView = archiveIssues.length > 0 ? archiveIssues : archiveDummyData;
 
     return (
       <>
-        <h2>Archive</h2>
-        <ul className="journal-list">
-          <li>Clickable list: year, volume, issue no</li>
-          <li>Index of each issue (same as a reference site)</li>
-          <li>Sr.No., Title, Author, Page no, Read (Clickable)</li>
-          <li>After clicking on Read: Show the Research paper pdf</li>
-          <li>Download PDF</li>
-          <li>Share link</li>
-        </ul>
-        {archiveIssues.length === 0 ? (
-          <p>No archived issues yet.</p>
-        ) : (
-          <div className="archive-issue-list">
-            {archiveIssues.map((issue) => (
-              <details key={issue.id} className="archive-issue-item">
-                <summary className="archive-issue-summary">
-                  {issue.year}, Vol. {issue.volume}, Issue {issue.issueNo} - {issue.title}
-                </summary>
-                <div className="issue-table-wrap">
-                  <table className="issue-table">
-                    <thead>
-                      <tr>
-                        <th>Sr. No.</th>
-                        <th>Title</th>
-                        <th>Author</th>
-                        <th>Page No.</th>
-                        <th>Read</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {issue.entries.map((entry) => (
-                        <tr key={entry.id}>
-                          <td>{entry.srNo}</td>
-                          <td>{entry.title}</td>
-                          <td>{entry.author}</td>
-                          <td>{entry.pageNo}</td>
-                          <td>
-                            <a href={entry.pdfUrl} target="_blank" rel="noreferrer" className="inline-link">
-                              Read
-                            </a>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </details>
-            ))}
-          </div>
-        )}
+        <ArchiveIssuesClient archiveEnabled={archiveEnabled} issues={issuesForView} />
       </>
     );
   }
@@ -334,10 +352,7 @@ async function renderMenuPage(slug: string) {
       <>
         <h2>Submit Manuscript</h2>
         <p>
-          Form will contain these entries. After submitting, the mail will be
-          received on
-          {" "}
-          <strong>atulyaswarpublication@gmail.com</strong>
+          Submit your manuscript using the form below.
         </p>
         <SubmitManuscriptForm />
       </>

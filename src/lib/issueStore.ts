@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { kv } from "@vercel/kv";
+import { getVolumeIssueByYearAndIssue } from "@/lib/volumeIssue";
 
 export type IssueStatus = "current" | "archive";
 
@@ -26,10 +27,8 @@ export type JournalIssue = {
 };
 
 type NewIssueInput = {
-  year: string;
-  volume: string;
-  issueNo: string;
   title: string;
+  publicationDate?: Date;
 };
 
 type NewEntryInput = {
@@ -89,7 +88,18 @@ export async function listIssues() {
 
 export async function getCurrentIssue() {
   const issues = await readAll();
-  return issues.find((issue) => issue.status === "current") ?? null;
+  const current = issues.find((issue) => issue.status === "current");
+  if (current) return current;
+
+  if (issues.length === 0) return null;
+
+  // Self-heal fallback: if current is missing, promote latest issue as current.
+  const fallback = [...issues].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))[0];
+  const updated = issues.map((issue) =>
+    issue.id === fallback.id ? { ...issue, status: "current" as const } : { ...issue, status: "archive" as const },
+  );
+  await writeAll(updated);
+  return updated.find((issue) => issue.id === fallback.id) ?? null;
 }
 
 export async function getArchiveIssues() {
@@ -101,6 +111,10 @@ export async function getArchiveIssues() {
 
 export async function createIssue(input: NewIssueInput) {
   const all = await readAll();
+  const cleanTitle = input.title.trim();
+  if (!cleanTitle) {
+    throw new Error("Issue title is required.");
+  }
 
   const updated = all.map((issue) =>
     issue.status === "current"
@@ -111,14 +125,33 @@ export async function createIssue(input: NewIssueInput) {
       : issue,
   );
 
+  const publicationDate = input.publicationDate ?? new Date();
+  const year = String(publicationDate.getFullYear());
+  const issuesInYear = updated.filter((item) => item.year === year);
+
+  // Enforce 2 issues per year: first create => issue 1, second create => issue 2.
+  let issueNumber: 1 | 2;
+  if (!issuesInYear.some((item) => item.issueNo === "1")) {
+    issueNumber = 1;
+  } else if (!issuesInYear.some((item) => item.issueNo === "2")) {
+    issueNumber = 2;
+  } else {
+    throw new Error(`Two issues are already created for year ${year}.`);
+  }
+
+  const volumeIssue = getVolumeIssueByYearAndIssue(publicationDate.getFullYear(), issueNumber);
+  const volume = String(volumeIssue.volumeNumber);
+  const issueNo = String(issueNumber);
+
   const issue: JournalIssue = {
     id: randomUUID(),
-    year: input.year.trim(),
-    volume: input.volume.trim(),
-    issueNo: input.issueNo.trim(),
-    title: input.title.trim() || `Vol. ${input.volume}, Issue ${input.issueNo}`,
+    year,
+    volume,
+    issueNo,
+    // Keep title explicit so issue submissions stay aligned with admin-defined issue name.
+    title: cleanTitle,
     status: "current",
-    createdAt: new Date().toISOString(),
+    createdAt: publicationDate.toISOString(),
     entries: [],
   };
 
@@ -185,7 +218,20 @@ export async function deleteIssue(id: string) {
   const all = await readAll();
   const index = all.findIndex((issue) => issue.id === id);
   if (index === -1) return false;
+  const deletedIssue = all[index];
   all.splice(index, 1);
+
+  // If current was deleted, promote latest remaining issue to current.
+  if (deletedIssue.status === "current" && all.length > 0 && !all.some((issue) => issue.status === "current")) {
+    const fallback = [...all].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))[0];
+    for (let i = 0; i < all.length; i += 1) {
+      all[i] = {
+        ...all[i],
+        status: all[i].id === fallback.id ? "current" : "archive",
+      };
+    }
+  }
+
   await writeAll(all);
   return true;
 }

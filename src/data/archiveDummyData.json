@@ -1,0 +1,132 @@
+[
+  {
+    "id": "dummy-archive-2025-issue-1",
+    "year": "2025",
+    "volume": "14",
+    "issueNo": "1",
+    "title": "Atulyaswar Journal - Jan-Jun 2025",
+    "entries": [
+      {
+        "id": "d1-e1",
+        "srNo": 1,
+        "title": "Raga Structure in Contemporary Concert Practice",
+        "author": "Anita Deshpande",
+        "pageNo": "1-10",
+        "pdfUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+      },
+      {
+        "id": "d1-e2",
+        "srNo": 2,
+        "title": "Pedagogy of Khayal in Institutional Settings",
+        "author": "Rohit Kulkarni",
+        "pageNo": "11-20",
+        "pdfUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+      },
+      {
+        "id": "d1-e3",
+        "srNo": 3,
+        "title": "Laya and Improvisation: A Comparative Study",
+        "author": "Meera Joglekar",
+        "pageNo": "21-30",
+        "pdfUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+      },
+      {
+        "id": "d1-e4",
+        "srNo": 4,
+        "title": "Archival Value of Audio Notation",
+        "author": "Sadanand Patil",
+        "pageNo": "31-38",
+        "pdfUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+      },
+      {
+        "id": "d1-e5",
+        "srNo": 5,
+        "title": "Bandish Texts and Aesthetic Meaning",
+        "author": "Kavita Bhide",
+        "pageNo": "39-48",
+        "pdfUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+      },
+      {
+        "id": "d1-e6",
+        "srNo": 6,
+        "title": "From Guru-Shishya to Hybrid Learning",
+        "author": "Neha Sathe",
+        "pageNo": "49-57",
+        "pdfUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+      },
+      {
+        "id": "d1-e7",
+        "srNo": 7,
+        "title": "Voice Culture in Hindustani Training",
+        "author": "Rajesh Kamat",
+        "pageNo": "58-66",
+        "pdfUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+      },
+      {
+        "id": "d1-e8",
+        "srNo": 8,
+        "title": "A Review of 20th Century Gharana Literature",
+        "author": "Swati Bhosale",
+        "pageNo": "67-75",
+        "pdfUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+      },
+      {
+        "id": "d1-e9",
+        "srNo": 9,
+        "title": "Performance Psychology in Raga Development",
+        "author": "Ajay Khedekar",
+        "pageNo": "76-85",
+        "pdfUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+      },
+      {
+        "id": "d1-e10",
+        "srNo": 10,
+        "title": "Notation Tools for Modern Classrooms",
+        "author": "Pooja Lele",
+        "pageNo": "86-94",
+        "pdfUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+      },
+      {
+        "id": "d1-e11",
+        "srNo": 11,
+        "title": "Digital Preservation of Rare Recordings",
+        "author": "Kunal Oak",
+        "pageNo": "95-104",
+        "pdfUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+      }
+    ]
+  },
+  {
+    "id": "dummy-archive-2025-issue-2",
+    "year": "2025",
+    "volume": "14",
+    "issueNo": "2",
+    "title": "Atulyaswar Journal - Jul-Dec 2025",
+    "entries": [
+      {
+        "id": "d2-e1",
+        "srNo": 1,
+        "title": "Rasa Theory in Contemporary Vocal Forms",
+        "author": "Minal Deo",
+        "pageNo": "1-9",
+        "pdfUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+      },
+      {
+        "id": "d2-e2",
+        "srNo": 2,
+        "title": "Tanpura Acoustics: Practical Observations",
+        "author": "Prashant Wagh",
+        "pageNo": "10-19",
+        "pdfUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+      },
+      {
+        "id": "d2-e3",
+        "srNo": 3,
+        "title": "Recontextualizing Dhrupad Pedagogy",
+        "author": "Asha Nadkarni",
+        "pageNo": "20-29",
+        "pdfUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+      }
+    ]
+  }
+]

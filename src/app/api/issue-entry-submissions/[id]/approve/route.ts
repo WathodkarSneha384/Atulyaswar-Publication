@@ -23,11 +23,14 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   if (item.status !== "approved") {
+    const readPdfUrl =
+      item.pdfUrl ?? `/api/issue-entry-submissions/${item.id}/pdf`;
+
     const updatedIssue = await addIssueEntry(item.issueId, {
       title: item.title,
       author: item.author,
       pageNo: item.pageNo,
-      pdfUrl: item.pdfUrl,
+      pdfUrl: readPdfUrl,
     });
     if (!updatedIssue) {
       return NextResponse.json(

@@ -1,8 +1,22 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 
 type SubmitState = "idle" | "submitting" | "success" | "error";
+type FieldErrors = Partial<
+  Record<
+    | "authorNames"
+    | "title"
+    | "designations"
+    | "email"
+    | "phone"
+    | "address"
+    | "paperFile"
+    | "plagiarismFile"
+    | "accepted",
+    string
+  >
+>;
 
 const designationOptions = [
   "Researcher",
@@ -10,11 +24,34 @@ const designationOptions = [
   "Artist",
   "Musicologist",
 ] as const;
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const DOC_EXTENSIONS = [".doc", ".docx"];
+
+function hasAllowedDocExtension(fileName: string) {
+  const lower = fileName.toLowerCase();
+  return DOC_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+
+function isPdf(fileName: string) {
+  return fileName.toLowerCase().endsWith(".pdf");
+}
+
+function hasSixDigitPincode(value: string) {
+  return /\b\d{6}\b/.test(value);
+}
+
+function isValidPhone(value: string) {
+  const compact = value.replace(/[^\d+]/g, "");
+  return /^[+]?\d{8,15}$/.test(compact);
+}
 
 export default function SubmitManuscriptForm() {
   const [state, setState] = useState<SubmitState>("idle");
   const [message, setMessage] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [paperFileName, setPaperFileName] = useState("");
+  const [plagiarismFileName, setPlagiarismFileName] = useState("");
 
   const designationValue = useMemo(() => selected.join(", "), [selected]);
 
@@ -22,16 +59,96 @@ export default function SubmitManuscriptForm() {
     setSelected((prev) =>
       prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value],
     );
+    setFieldErrors((prev) => ({ ...prev, designations: "" }));
+  }
+
+  function handlePaperFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const selectedFile = event.target.files?.[0];
+    setPaperFileName(selectedFile?.name ?? "");
+    setFieldErrors((prev) => ({ ...prev, paperFile: "" }));
+  }
+
+  function handlePlagiarismFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const selectedFile = event.target.files?.[0];
+    setPlagiarismFileName(selectedFile?.name ?? "");
+    setFieldErrors((prev) => ({ ...prev, plagiarismFile: "" }));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setState("submitting");
-    setMessage("");
-
     const form = event.currentTarget;
     const formData = new FormData(form);
     formData.set("designations", designationValue);
+    const authorNames = String(formData.get("authorNames") ?? "").trim();
+    const title = String(formData.get("title") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim();
+    const phone = String(formData.get("phone") ?? "").trim();
+    const address = String(formData.get("address") ?? "").trim();
+    const paperFile = formData.get("paperFile");
+    const plagiarismFile = formData.get("plagiarismFile");
+    const accepted = formData.get("accepted");
+    const errors: FieldErrors = {};
+
+    if (!authorNames || !title || !email || !phone || !address) {
+      if (!authorNames) errors.authorNames = "Author name is required.";
+      if (!title) errors.title = "Research paper title is required.";
+      if (!email) errors.email = "Email is required.";
+      if (!phone) errors.phone = "Phone number is required.";
+      if (!address) errors.address = "Address with pincode is required.";
+    }
+
+    if (selected.length === 0) {
+      errors.designations = "Please select at least one designation.";
+    }
+
+    if (phone && !isValidPhone(phone)) {
+      errors.phone = "Please enter a valid phone number.";
+    }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Please enter a valid email address.";
+    }
+
+    if (address && !hasSixDigitPincode(address)) {
+      errors.address = "Address should include a valid 6-digit pincode.";
+    }
+
+    if (!(paperFile instanceof File) || !(plagiarismFile instanceof File)) {
+      if (!(paperFile instanceof File)) errors.paperFile = "Please upload paper file.";
+      if (!(plagiarismFile instanceof File)) {
+        errors.plagiarismFile = "Please upload plagiarism report.";
+      }
+    }
+
+    if (paperFile instanceof File && !hasAllowedDocExtension(paperFile.name)) {
+      errors.paperFile = "Paper file must be DOC or DOCX.";
+    }
+
+    if (plagiarismFile instanceof File && !isPdf(plagiarismFile.name)) {
+      errors.plagiarismFile = "Plagiarism report must be a PDF file.";
+    }
+
+    if (paperFile instanceof File && paperFile.size > MAX_FILE_SIZE) {
+      errors.paperFile = "Paper file size should not exceed 5 MB.";
+    }
+    if (plagiarismFile instanceof File && plagiarismFile.size > MAX_FILE_SIZE) {
+      errors.plagiarismFile = "Plagiarism file size should not exceed 5 MB.";
+    }
+
+    if (accepted !== "true") {
+      errors.accepted = "Please accept terms and conditions.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setState("error");
+      setMessage("Please fix the highlighted form fields.");
+      return;
+    }
+
+    setState("submitting");
+    setMessage("");
+    setFieldErrors({});
 
     try {
       const response = await fetch("/api/manuscripts", {
@@ -46,6 +163,8 @@ export default function SubmitManuscriptForm() {
 
       form.reset();
       setSelected([]);
+      setPaperFileName("");
+      setPlagiarismFileName("");
       setState("success");
       setMessage(
         "Manuscript submitted successfully. Admin has been notified for review.",
@@ -59,82 +178,214 @@ export default function SubmitManuscriptForm() {
   }
 
   return (
-    <form className="submit-form-grid" onSubmit={handleSubmit}>
-      <label className="full-span">
-        1. Author name(s)
-        <input type="text" name="authorNames" className="subscribe-input" required />
-      </label>
-
-      <fieldset className="full-span manuscript-fieldset">
-        <legend>2. Designation (Multiple option selection) for each author</legend>
-        {designationOptions.map((option) => (
-          <label key={option}>
-            <input
-              type="checkbox"
-              checked={selected.includes(option)}
-              onChange={() => toggleDesignation(option)}
-            />
-            {" "}
-            {option}
-          </label>
-        ))}
-      </fieldset>
-      <input type="hidden" name="designations" value={designationValue} />
-
-      <label className="full-span">
-        3. Research Paper Title
-        <input type="text" name="title" className="subscribe-input" required />
-      </label>
-      <label>
-        4. Email
-        <input type="email" name="email" className="subscribe-input" required />
-      </label>
-      <label>
-        5. Phone
-        <input type="tel" name="phone" className="subscribe-input" required />
-      </label>
-      <label className="full-span">
-        6. Address with pincode
-        <textarea name="address" className="subscribe-input form-textarea" required />
-      </label>
-      <label className="full-span">
-        7. Upload Paper: Max. size 5 MB, DOCX/DOC format only
-        <input
-          type="file"
-          name="paperFile"
-          className="subscribe-input"
-          accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-          required
-        />
-      </label>
-      <label className="full-span">
-        8. Upload Plagiarism report: Max. size 5 MB, PDF file only
-        <input
-          type="file"
-          name="plagiarismFile"
-          className="subscribe-input"
-          accept=".pdf,application/pdf"
-          required
-        />
-      </label>
-      <label className="full-span checkbox-row">
-        <input type="checkbox" name="accepted" value="true" required />
-        {" "}
-        9. I accept terms and conditions
-      </label>
-      <button type="submit" className="subscribe-button" disabled={state === "submitting"}>
-        {state === "submitting" ? "Submitting..." : "10. Submit"}
-      </button>
-      {state !== "idle" && (
-        <p
-          className={`contact-form-status ${
-            state === "success" ? "success" : "error"
-          }`}
-          role="status"
-        >
-          {message}
+    <div className="submit-manuscript-layout">
+      <form className="submit-form-grid submit-manuscript-card" onSubmit={handleSubmit}>
+        <h3 className="full-span">Manuscript Submission Form</h3>
+        <p className="full-span manuscript-form-help">
+          Fields marked * are mandatory.
         </p>
-      )}
-    </form>
+
+        <label>
+          Author name(s) *
+          <input
+            type="text"
+            name="authorNames"
+            className="subscribe-input"
+            required
+            onChange={() => setFieldErrors((prev) => ({ ...prev, authorNames: "" }))}
+          />
+          {fieldErrors.authorNames && <span className="field-error-text">{fieldErrors.authorNames}</span>}
+        </label>
+
+        <label>
+          Research Paper Title *
+          <input
+            type="text"
+            name="title"
+            className="subscribe-input"
+            required
+            onChange={() => setFieldErrors((prev) => ({ ...prev, title: "" }))}
+          />
+          {fieldErrors.title && <span className="field-error-text">{fieldErrors.title}</span>}
+        </label>
+
+        <fieldset className="full-span manuscript-fieldset">
+          <legend>Designation *</legend>
+          <div className="manuscript-designation-grid">
+            {designationOptions.map((option) => (
+              <label key={option} className="manuscript-option-label">
+                <input
+                  type="checkbox"
+                  checked={selected.includes(option)}
+                  onChange={() => toggleDesignation(option)}
+                />
+                <span>{option}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        {fieldErrors.designations && (
+          <p className="field-error-text full-span">{fieldErrors.designations}</p>
+        )}
+        <input type="hidden" name="designations" value={designationValue} />
+        <label>
+          Email *
+          <input
+            type="email"
+            name="email"
+            className="subscribe-input"
+            required
+            onChange={() => setFieldErrors((prev) => ({ ...prev, email: "" }))}
+          />
+          {fieldErrors.email && <span className="field-error-text">{fieldErrors.email}</span>}
+        </label>
+        <label>
+          Phone *
+          <input
+            type="tel"
+            name="phone"
+            className="subscribe-input"
+            placeholder="+91 9765556076"
+            required
+            onChange={() => setFieldErrors((prev) => ({ ...prev, phone: "" }))}
+          />
+          {fieldErrors.phone && <span className="field-error-text">{fieldErrors.phone}</span>}
+        </label>
+        <label className="full-span">
+          Address with pincode *
+          <textarea
+            name="address"
+            className="subscribe-input form-textarea"
+            placeholder="Full postal address with 6-digit pincode"
+            required
+            onChange={() => setFieldErrors((prev) => ({ ...prev, address: "" }))}
+          />
+          {fieldErrors.address && <span className="field-error-text">{fieldErrors.address}</span>}
+        </label>
+        <div className="file-upload-field">
+          Upload Paper: Max. size 5 MB, DOCX/DOC format only *
+          <input
+            id="paperFile"
+            type="file"
+            name="paperFile"
+            className="visually-hidden-file-input"
+            accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            required
+            onChange={handlePaperFileChange}
+          />
+          <label htmlFor="paperFile" className="file-picker-row">
+            <span className="file-picker-button">Select file</span>
+            <span className="file-picker-name">
+              {paperFileName || "No file selected"}
+            </span>
+          </label>
+          {fieldErrors.paperFile && <span className="field-error-text">{fieldErrors.paperFile}</span>}
+        </div>
+        <div className="file-upload-field">
+          Upload Plagiarism report: Max. size 5 MB, PDF file only *
+          <input
+            id="plagiarismFile"
+            type="file"
+            name="plagiarismFile"
+            className="visually-hidden-file-input"
+            accept=".pdf,application/pdf"
+            required
+            onChange={handlePlagiarismFileChange}
+          />
+          <label htmlFor="plagiarismFile" className="file-picker-row">
+            <span className="file-picker-button">Select file</span>
+            <span className="file-picker-name">
+              {plagiarismFileName || "No file selected"}
+            </span>
+          </label>
+          {fieldErrors.plagiarismFile && (
+            <span className="field-error-text">{fieldErrors.plagiarismFile}</span>
+          )}
+        </div>
+        <label className="full-span checkbox-row">
+          <input
+            type="checkbox"
+            name="accepted"
+            value="true"
+            required
+            onChange={() => setFieldErrors((prev) => ({ ...prev, accepted: "" }))}
+          />
+          {" "}
+          I accept terms and conditions *
+        </label>
+        {fieldErrors.accepted && <p className="field-error-text full-span">{fieldErrors.accepted}</p>}
+        <button
+          type="submit"
+          className="subscribe-button submit-button-centered full-span"
+          disabled={state === "submitting"}
+        >
+          {state === "submitting" ? "Submitting..." : "Submit"}
+        </button>
+        {state !== "idle" && (
+          <p
+            className={`contact-form-status ${
+              state === "success" ? "success" : "error"
+            }`}
+            role="status"
+          >
+            {message}
+          </p>
+        )}
+      </form>
+
+      <aside className="submit-guidelines-card">
+        <h3>Guidelines for Authors</h3>
+        <ul className="guideline-list manuscript-guideline-list">
+          <li>
+            Research paper should be written in following format.
+            <ul className="sub-guideline-list manuscript-sub-guideline-list">
+              <li>Title of Paper</li>
+              <li>Author(s) name with full official designation, institute name, Email, Contact No</li>
+              <li>Abstract</li>
+              <li>Keywords</li>
+              <li>Introduction</li>
+              <li>Main body</li>
+              <li>Observation/Analysis</li>
+              <li>Result</li>
+              <li>Reference/Bibliography (in any recognized format)</li>
+            </ul>
+          </li>
+          <li>Submit your manuscript through this website only.</li>
+          <li>Word limit is Minimum 2000 to Maximum 5000.</li>
+          <li>Fonts allowed: English - Times New Roman in 12 font size, Hindi/Marathi - Unicode Mangal font.</li>
+          <li>
+            Authors will be notified via email regarding the outcome of the review process and the
+            subsequent acceptance or rejection of their manuscript.
+          </li>
+          <li>
+            The Editor reserves the right to make necessary linguistic, grammatical, and formatting
+            adjustments to manuscripts to ensure clarity and adherence to the journal&apos;s guidelines.
+          </li>
+          <li>
+            Authors must adhere to strict ethical standards and avoid the following forms of misconduct:
+            <ul className="sub-guideline-list manuscript-sub-guideline-list">
+              <li>
+                Misrepresentation: Including any false, fraudulent, misleading, or fabricated
+                information within the manuscript.
+              </li>
+              <li>
+                Content Liability: Ambiguous content or errors that may lead to the
+                misinterpretation of research findings.
+              </li>
+            </ul>
+            In such cases, after consulting with Author, the Journal will publish the revised paper.
+          </li>
+          <li>If plagiarism is identified that violates UGC guidelines, the paper may be rejected.</li>
+          <li>
+            If submitted manuscript is already published elsewhere, in any form (book/chapter in
+            book/book section/research paper etc), the paper will be rejected.
+          </li>
+          <li>
+            Author should obtain Plagiarism Report through DrillBit/Turnitin/ithenticate softwares and
+            upload it while submitting the paper.
+          </li>
+        </ul>
+      </aside>
+    </div>
   );
 }

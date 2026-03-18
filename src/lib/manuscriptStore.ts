@@ -3,7 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { kv } from "@vercel/kv";
 
-export type ManuscriptStatus = "pending" | "approved";
+export type ManuscriptStatus = "pending" | "approved" | "rejected";
 
 export type ManuscriptRecord = {
   id: string;
@@ -16,7 +16,12 @@ export type ManuscriptRecord = {
   phone: string;
   address: string;
   paperFileName: string;
+  paperFileMimeType?: string;
+  paperFileBase64?: string;
   plagiarismFileName: string;
+  plagiarismFileMimeType?: string;
+  plagiarismFileBase64?: string;
+  rejectedReason?: string;
 };
 
 type NewManuscriptInput = Omit<ManuscriptRecord, "id" | "createdAt" | "status">;
@@ -98,6 +103,22 @@ export async function approveManuscript(id: string) {
   all[index] = {
     ...all[index],
     status: "approved",
+    rejectedReason: undefined,
+  };
+  await writeAll(all);
+  return all[index];
+}
+
+export async function rejectManuscript(id: string, reason?: string) {
+  const all = await readAll();
+  const index = all.findIndex((record) => record.id === id);
+
+  if (index === -1) return null;
+
+  all[index] = {
+    ...all[index],
+    status: "rejected",
+    rejectedReason: reason?.trim() || all[index].rejectedReason,
   };
   await writeAll(all);
   return all[index];

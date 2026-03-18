@@ -8,9 +8,6 @@ import {
 } from "@/lib/issueStore";
 
 type CreateIssuePayload = {
-  year?: string;
-  volume?: string;
-  issueNo?: string;
   title?: string;
 };
 
@@ -44,18 +41,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const year = (payload.year ?? "").trim();
-  const volume = (payload.volume ?? "").trim();
-  const issueNo = (payload.issueNo ?? "").trim();
   const title = (payload.title ?? "").trim();
+  if (!title) {
+    return NextResponse.json({ error: "Issue title is required." }, { status: 400 });
+  }
 
-  if (!year || !volume || !issueNo) {
+  try {
+    const issue = await createIssue({ title });
+    return NextResponse.json({ ok: true, item: issue });
+  } catch (error) {
     return NextResponse.json(
-      { error: "Year, volume, and issue no are required." },
+      { error: error instanceof Error ? error.message : "Failed to create issue." },
       { status: 400 },
     );
   }
-
-  const issue = await createIssue({ year, volume, issueNo, title });
-  return NextResponse.json({ ok: true, item: issue });
 }
