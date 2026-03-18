@@ -35,7 +35,7 @@ async function renderMenuPage(slug: string) {
     return (
       <>
         <section className="about-page-wrap">
-          <h2 className="about-title">About</h2>
+          <h2 className="menu-page-title">About</h2>
           <div className="about-intro-card">
             <p>
               It is with great pride that we introduce Atulyaswar – A peer reviewed,
@@ -87,7 +87,7 @@ async function renderMenuPage(slug: string) {
   if (slug === "editorial-board") {
     return (
       <>
-        <h2>Board Members</h2>
+        <h2 className="menu-page-title">Board Members</h2>
         <div className="board-list">
           <article className="board-item">
             <div className="board-photo-wrap">
@@ -192,7 +192,7 @@ async function renderMenuPage(slug: string) {
 
     return (
       <>
-        <h2>Current Issue</h2>
+        <h2 className="menu-page-title">Current Issue</h2>
         {currentIssue ? (
           <>
             <p className="issue-title-row">
@@ -280,7 +280,7 @@ async function renderMenuPage(slug: string) {
   if (slug === "guidelines") {
     return (
       <>
-        <h2>Guidelines for Authors</h2>
+        <h2 className="menu-page-title">Guidelines for Authors</h2>
         <ul className="guideline-list manuscript-guideline-list">
           <li>
             Research paper should be written in following format.
@@ -343,7 +343,7 @@ async function renderMenuPage(slug: string) {
   if (slug === "contact-us") {
     return (
       <>
-        <h2>Contact Us</h2>
+        <h2 className="menu-page-title">Contact Us</h2>
         <p className="contact-intro">
           Contact form having: Name, Email, Subject, Message, Send
         </p>
@@ -355,7 +355,7 @@ async function renderMenuPage(slug: string) {
   if (slug === "submit-manuscript") {
     return (
       <>
-        <h2>Submit Manuscript</h2>
+        <h2 className="menu-page-title">Submit Manuscript</h2>
         <p>
           Submit your manuscript using the form below.
         </p>
@@ -369,7 +369,7 @@ async function renderMenuPage(slug: string) {
 
     return (
       <>
-        <h2>Manuscripts</h2>
+        <h2 className="menu-page-title">Manuscripts</h2>
         <p>Approved manuscripts are listed below.</p>
         {approved.length === 0 ? (
           <p>No approved manuscripts yet.</p>
@@ -397,7 +397,7 @@ async function renderMenuPage(slug: string) {
   if (slug === "open-access-policy") {
     return (
       <>
-        <h2>Open Access Policy</h2>
+        <h2 className="menu-page-title">Open Access Policy</h2>
         <p>
           Atulyaswar Journal follows the principle that making research freely
           available to the readers supports a greater global exchange of

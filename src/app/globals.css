@@ -753,6 +753,23 @@ a {
   margin-bottom: 0.35rem;
 }
 
+.journal-content h2 {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 0.6rem;
+}
+
+.journal-content h2::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -0.2rem;
+  width: clamp(52px, 55%, 92px);
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #a12a82, rgba(161, 42, 130, 0.15));
+}
+
 .journal-content h4 {
   color: #7e2f67;
 }
@@ -764,23 +781,6 @@ a {
 .about-page-wrap {
   display: grid;
   gap: 0.95rem;
-}
-
-.about-title {
-  position: relative;
-  width: fit-content;
-  margin-bottom: 0.1rem;
-}
-
-.about-title::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -0.2rem;
-  width: 78%;
-  height: 3px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #a12a82, rgba(161, 42, 130, 0.15));
 }
 
 .about-intro-card {
