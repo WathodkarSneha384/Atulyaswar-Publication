@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import logoImage from "../../Asset/Logo1.png";
 import drSanikaImage from "../../Asset/Board_Members/Dr. Sanika Goregaonkar.jpg";
 import drVilasImage from "../../Asset/Board_Members/Dr. Vilas Jadhav.png";
 import profSheetalImage from "../../Asset/Board_Members/Prof. Sheetal More.jpg";
@@ -40,7 +41,15 @@ export default function HomePage() {
     <main className="cover-page">
       <div className="cover-shell">
         <section className="cover-main-card">
-          <h1 className="cover-title">Atulyaswar - A Peer Reviewed Indian Music Journal</h1>
+          <div className="cover-logo-head cover-logo-row">
+            <Image
+              src={logoImage}
+              alt="Atulyaswar logo"
+              className="cover-logo-image"
+              priority
+            />
+            <p className="cover-journal-tagline">- A Peer Reviewed Indian Music Journal</p>
+          </div>
           <p>
             It is with great pride that we introduce Atulyaswar, a dedicated platform
             for scholarship in Indian Classical Music.

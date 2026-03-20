@@ -85,6 +85,7 @@ export default function TopNavbar({ activePath }: TopNavbarProps) {
   const topRowMenu = [
     { label: labels.Home, href: "/" },
     { label: labels.Journal, href: "/journal" },
+    { label: labels.Board, href: "/journal/editorial-board" },
     { label: labels.CurrentIssue, href: "/journal/current-issue" },
     { label: labels.Archive, href: "/journal/archive" },
     { label: labels.FAQ, href: "/faq" },
