@@ -29,6 +29,9 @@ export default function JournalShell({ activePath, children }: JournalShellProps
           </div>
         </section>
       </div>
+      <Link href="/editor" className="cross-nav-fab" aria-label="Open Editor">
+        Open Editor
+      </Link>
       <SiteFooter />
     </main>
   );

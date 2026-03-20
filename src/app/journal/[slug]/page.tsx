@@ -2,7 +2,6 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import ContactUsForm from "@/components/ContactUsForm";
 import ArchiveIssuesClient from "@/components/ArchiveIssuesClient";
-import IssueEntrySubmissionForm from "@/components/IssueEntrySubmissionForm";
 import SubmitManuscriptForm from "@/components/SubmitManuscriptForm";
 import JournalShell from "@/components/JournalShell";
 import { listApprovedIssueEntriesForIssue } from "@/lib/issueEntrySubmissionStore";
@@ -256,7 +255,6 @@ async function renderMenuPage(slug: string) {
                 </tbody>
               </table>
             </div>
-            <IssueEntrySubmissionForm issueId={currentIssue.id} />
           </>
         ) : (
           <p>Current issue is not published yet.</p>

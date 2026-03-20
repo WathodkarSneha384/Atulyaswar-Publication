@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type TabKey = "manuscripts" | "issues" | "entrySubmissions";
@@ -44,6 +44,7 @@ type IssueItem = {
 
 type IssueEntrySubmission = {
   id: string;
+  manuscriptId?: string;
   issueId: string;
   issueTitle: string;
   title: string;
@@ -56,6 +57,7 @@ type IssueEntrySubmission = {
   submitterEmail: string;
   createdAt: string;
   status: "pending" | "approved" | "rejected";
+  publishStatus: "draft" | "published";
   rejectedReason?: string;
 };
 
@@ -67,8 +69,27 @@ type DeleteTarget = {
   label: string;
 };
 
+type ConfirmTarget =
+  | { type: "openEdit"; row: RowData }
+  | { type: "publishIssue"; issueId: string }
+  | { type: "publishSelected" }
+  | { type: "saveEdit" };
+
+type ConfirmDialog = {
+  title: string;
+  message: string;
+  target: ConfirmTarget;
+};
+
 function isManuscriptRow(data: RowData): data is ManuscriptItem {
   return "paperFileName" in data && "plagiarismFileName" in data;
+}
+
+function formatFieldLabel(key: string) {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function ActionIcon({ action }: { action: IconAction }) {
@@ -149,6 +170,9 @@ export default function AdminDashboard() {
   const [viewData, setViewData] = useState<RowData | null>(null);
   const [editData, setEditData] = useState<RowData | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog | null>(null);
+  const [selectedSubmissionIds, setSelectedSubmissionIds] = useState<string[]>([]);
+  const pendingEditFormDataRef = useRef<FormData | null>(null);
 
   const [newIssue, setNewIssue] = useState({
     title: "",
@@ -160,16 +184,32 @@ export default function AdminDashboard() {
     return entrySubmissions;
   }, [activeTab, manuscripts, issues, entrySubmissions]);
 
-  const approvedSubmissionMap = useMemo(() => {
+  const publishedSubmissionMap = useMemo(() => {
     const map = new Map<string, IssueEntrySubmission[]>();
     for (const item of entrySubmissions) {
-      if (item.status !== "approved") continue;
+      if (item.status !== "approved" || item.publishStatus !== "published") continue;
       const existing = map.get(item.issueId) ?? [];
       existing.push(item);
       map.set(item.issueId, existing);
     }
     return map;
   }, [entrySubmissions]);
+
+  const pendingPublishSubmissionMap = useMemo(() => {
+    const map = new Map<string, IssueEntrySubmission[]>();
+    for (const item of entrySubmissions) {
+      if (item.status !== "approved" || item.publishStatus === "published") continue;
+      const existing = map.get(item.issueId) ?? [];
+      existing.push(item);
+      map.set(item.issueId, existing);
+    }
+    return map;
+  }, [entrySubmissions]);
+
+  const approvedEntrySubmissions = useMemo(
+    () => entrySubmissions.filter((item) => item.status === "approved"),
+    [entrySubmissions],
+  );
 
   const loadCurrentTabData = useCallback(async (tab: TabKey) => {
     setLoading(true);
@@ -218,6 +258,10 @@ export default function AdminDashboard() {
     void loadCurrentTabData("manuscripts");
   }, [loadCurrentTabData]);
 
+  function openConfirmDialog(dialog: ConfirmDialog) {
+    setConfirmDialog(dialog);
+  }
+
   async function logout() {
     await fetch("/api/admin/logout", { method: "POST" });
     router.push("/admin/login");
@@ -256,25 +300,10 @@ export default function AdminDashboard() {
     await deleteRow(id, tab);
   }
 
-  async function saveEdit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function executeSaveEdit(formData: FormData) {
     if (!editData) return;
     setError("");
     setSuccess("");
-
-    const formData = new FormData(event.currentTarget);
-    const payload: Record<string, unknown> = {};
-    formData.forEach((value, key) => {
-      if (key === "designations") {
-        payload[key] = String(value)
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean);
-      } else {
-        payload[key] = String(value);
-      }
-    });
-
     const endpoint =
       activeTab === "manuscripts"
         ? `/api/manuscripts/${editData.id}`
@@ -282,11 +311,36 @@ export default function AdminDashboard() {
           ? `/api/issues/${editData.id}`
           : `/api/issue-entry-submissions/${editData.id}`;
 
-    const response = await fetch(endpoint, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    let response: Response;
+    if (activeTab === "entrySubmissions") {
+      const pdfFile = formData.get("pdfFile");
+      if (!(pdfFile instanceof File) || pdfFile.size === 0) {
+        formData.delete("pdfFile");
+      }
+      response = await fetch(endpoint, {
+        method: "PATCH",
+        body: formData,
+      });
+    } else {
+      const payload: Record<string, unknown> = {};
+      formData.forEach((value, key) => {
+        if (key === "designations") {
+          payload[key] = String(value)
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean);
+        } else {
+          payload[key] = String(value);
+        }
+      });
+
+      response = await fetch(endpoint, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    }
+
     const data = (await response.json()) as { ok?: boolean; error?: string };
     if (!response.ok || !data.ok) {
       setError(data.error ?? "Update failed.");
@@ -298,33 +352,128 @@ export default function AdminDashboard() {
     await loadCurrentTabData(activeTab);
   }
 
-  async function approveEntrySubmission(id: string) {
-    const response = await fetch(`/api/issue-entry-submissions/${id}/approve`, {
-      method: "PATCH",
+  async function saveEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editData) return;
+    pendingEditFormDataRef.current = new FormData(event.currentTarget);
+    openConfirmDialog({
+      title: "Confirm Save",
+      message: "Do you want to save these edits?",
+      target: { type: "saveEdit" },
     });
-    const data = (await response.json()) as { ok?: boolean; error?: string };
+  }
+
+  async function executePublishIssueEntries(issueId: string) {
+    setError("");
+    setSuccess("");
+    const response = await fetch("/api/issue-entry-submissions/publish", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ issueId }),
+    });
+    const data = (await response.json()) as {
+      ok?: boolean;
+      error?: string;
+      publishedCount?: number;
+    };
     if (!response.ok || !data.ok) {
-      setError(data.error ?? "Approve failed.");
+      setError(data.error ?? "Publish failed.");
       return;
     }
-    setSuccess("Approved and published.");
+    setSuccess(`Published ${data.publishedCount ?? 0} approved entries.`);
     await loadCurrentTabData("entrySubmissions");
     await loadCurrentTabData("issues");
   }
 
-  async function rejectEntrySubmission(id: string) {
-    const response = await fetch(`/api/issue-entry-submissions/${id}/reject`, {
+  function publishIssueEntries(issueId: string) {
+    openConfirmDialog({
+      title: "Confirm Publish",
+      message: "Publish all approved draft entries for this issue?",
+      target: { type: "publishIssue", issueId },
+    });
+  }
+
+  async function executePublishSelectedEntrySubmissions() {
+    if (selectedSubmissionIds.length === 0) return;
+    setError("");
+    setSuccess("");
+    const response = await fetch("/api/issue-entry-submissions/publish", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reason: "Rejected by admin" }),
+      body: JSON.stringify({ submissionIds: selectedSubmissionIds }),
     });
-    const data = (await response.json()) as { ok?: boolean; error?: string };
+    const data = (await response.json()) as {
+      ok?: boolean;
+      error?: string;
+      publishedCount?: number;
+    };
     if (!response.ok || !data.ok) {
-      setError(data.error ?? "Reject failed.");
+      setError(data.error ?? "Publish failed.");
       return;
     }
-    setSuccess("Submission rejected.");
+    setSelectedSubmissionIds([]);
+    setSuccess(`Published ${data.publishedCount ?? 0} selected entries.`);
     await loadCurrentTabData("entrySubmissions");
+    await loadCurrentTabData("issues");
+  }
+
+  function publishSelectedEntrySubmissions() {
+    if (selectedSubmissionIds.length === 0) return;
+    openConfirmDialog({
+      title: "Confirm Publish",
+      message: "Publish selected entries now?",
+      target: { type: "publishSelected" },
+    });
+  }
+
+  function requestEdit(row: RowData) {
+    openConfirmDialog({
+      title: "Confirm Edit",
+      message: "Do you want to edit this entry?",
+      target: { type: "openEdit", row },
+    });
+  }
+
+  async function confirmActionDialog() {
+    if (!confirmDialog) return;
+    const target = confirmDialog.target;
+    setConfirmDialog(null);
+
+    if (target.type === "openEdit") {
+      setEditData(target.row);
+      return;
+    }
+
+    if (target.type === "publishIssue") {
+      await executePublishIssueEntries(target.issueId);
+      return;
+    }
+
+    if (target.type === "publishSelected") {
+      await executePublishSelectedEntrySubmissions();
+      return;
+    }
+
+    const pendingFormData = pendingEditFormDataRef.current;
+    pendingEditFormDataRef.current = null;
+    if (!pendingFormData) return;
+    await executeSaveEdit(pendingFormData);
+  }
+
+  function toggleSubmissionSelection(id: string) {
+    setSelectedSubmissionIds((prev) =>
+      prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id],
+    );
+  }
+
+  function toggleSelectAllDraftApproved() {
+    const selectableIds = approvedEntrySubmissions
+      .filter((item) => item.publishStatus !== "published")
+      .map((item) => item.id);
+    if (selectableIds.length === 0) return;
+    setSelectedSubmissionIds((prev) =>
+      prev.length === selectableIds.length ? [] : selectableIds,
+    );
   }
 
   async function approveManuscriptSubmission(id: string) {
@@ -412,7 +561,13 @@ export default function AdminDashboard() {
                     <button type="button" className="icon-action-btn" title="View" aria-label="View" onClick={() => setViewData(item)}>
                       <ActionIcon action="view" />
                     </button>
-                    <button type="button" className="icon-action-btn" title="Edit" aria-label="Edit" onClick={() => setEditData(item)}>
+                    <button
+                      type="button"
+                      className="icon-action-btn"
+                      title="Edit"
+                      aria-label="Edit"
+                      onClick={() => requestEdit(item)}
+                    >
                       <ActionIcon action="edit" />
                     </button>
                     <button
@@ -462,7 +617,8 @@ export default function AdminDashboard() {
               <tr>
                 <th>Issue</th>
                 <th>Status</th>
-                <th>Entries</th>
+                <th>Published</th>
+                <th>Ready to Publish</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -471,12 +627,19 @@ export default function AdminDashboard() {
                 <tr key={item.id}>
                   <td>{item.title}</td>
                   <td>{item.status}</td>
-                  <td>{approvedSubmissionMap.get(item.id)?.length ?? 0}</td>
+                  <td>{publishedSubmissionMap.get(item.id)?.length ?? 0}</td>
+                  <td>{pendingPublishSubmissionMap.get(item.id)?.length ?? 0}</td>
                   <td className="action-cell">
                     <button type="button" className="icon-action-btn" title="View" aria-label="View" onClick={() => setViewData(item)}>
                       <ActionIcon action="view" />
                     </button>
-                    <button type="button" className="icon-action-btn" title="Edit" aria-label="Edit" onClick={() => setEditData(item)}>
+                    <button
+                      type="button"
+                      className="icon-action-btn"
+                      title="Edit"
+                      aria-label="Edit"
+                      onClick={() => requestEdit(item)}
+                    >
                       <ActionIcon action="edit" />
                     </button>
                     <button
@@ -493,6 +656,13 @@ export default function AdminDashboard() {
                     >
                       <ActionIcon action="delete" />
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => publishIssueEntries(item.id)}
+                      disabled={(pendingPublishSubmissionMap.get(item.id)?.length ?? 0) === 0}
+                    >
+                      Publish
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -502,30 +672,52 @@ export default function AdminDashboard() {
       );
     }
 
+    if (approvedEntrySubmissions.length === 0) {
+      return <p className="no-data">No approved manuscript entries available.</p>;
+    }
+
     return (
       <div className="issue-table-wrap">
         <table className="admin-table">
           <thead>
             <tr>
+              <th>Select</th>
               <th>Issue</th>
               <th>Title</th>
               <th>Author</th>
               <th>Status</th>
+              <th>Publish</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
-            {entrySubmissions.map((item) => (
+            {approvedEntrySubmissions.map((item) => (
               <tr key={item.id}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selectedSubmissionIds.includes(item.id)}
+                    disabled={item.publishStatus === "published"}
+                    onChange={() => toggleSubmissionSelection(item.id)}
+                    aria-label={`Select ${item.title}`}
+                  />
+                </td>
                 <td>{item.issueTitle}</td>
                 <td>{item.title}</td>
                 <td>{item.author}</td>
                 <td>{item.status}</td>
+                <td>{item.publishStatus}</td>
                 <td className="action-cell">
                   <button type="button" className="icon-action-btn" title="View" aria-label="View" onClick={() => setViewData(item)}>
                     <ActionIcon action="view" />
                   </button>
-                  <button type="button" className="icon-action-btn" title="Edit" aria-label="Edit" onClick={() => setEditData(item)}>
+                  <button
+                    type="button"
+                    className="icon-action-btn"
+                    title="Edit"
+                    aria-label="Edit"
+                    onClick={() => requestEdit(item)}
+                  >
                     <ActionIcon action="edit" />
                   </button>
                   <button
@@ -547,18 +739,8 @@ export default function AdminDashboard() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    PDF
+                    Read/Download PDF
                   </a>
-                  {item.status === "pending" && (
-                    <>
-                      <button type="button" onClick={() => approveEntrySubmission(item.id)}>
-                        Approve
-                      </button>
-                      <button type="button" onClick={() => rejectEntrySubmission(item.id)}>
-                        Reject
-                      </button>
-                    </>
-                  )}
                 </td>
               </tr>
             ))}
@@ -600,6 +782,8 @@ export default function AdminDashboard() {
                 setActiveTab(tab.key);
                 setViewData(null);
                 setEditData(null);
+                setConfirmDialog(null);
+                setSelectedSubmissionIds([]);
                 void loadCurrentTabData(tab.key);
               }}
             >
@@ -623,6 +807,28 @@ export default function AdminDashboard() {
               </p>
               <button type="submit" className="subscribe-button">Create Issue</button>
             </form>
+          )}
+          {activeTab === "entrySubmissions" && (
+            <div className="admin-toolbar admin-toolbar-right">
+              <button
+                type="button"
+                className="subscribe-button"
+                onClick={publishSelectedEntrySubmissions}
+                disabled={selectedSubmissionIds.length === 0}
+              >
+                Publish Selected
+              </button>
+              <button
+                type="button"
+                className="ghost-admin-btn"
+                onClick={toggleSelectAllDraftApproved}
+              >
+                {selectedSubmissionIds.length ===
+                approvedEntrySubmissions.filter((item) => item.publishStatus !== "published").length
+                  ? "Clear Selection"
+                  : "Select All Draft"}
+              </button>
+            </div>
           )}
 
           {renderTable()}
@@ -670,12 +876,12 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {(approvedSubmissionMap.get(viewData.id) ?? []).length === 0 ? (
+                      {(publishedSubmissionMap.get(viewData.id) ?? []).length === 0 ? (
                         <tr>
-                          <td colSpan={5}>No approved submissions for this issue.</td>
+                          <td colSpan={5}>No published submissions for this issue.</td>
                         </tr>
                       ) : (
-                        (approvedSubmissionMap.get(viewData.id) ?? []).map((entry, index) => (
+                        (publishedSubmissionMap.get(viewData.id) ?? []).map((entry, index) => (
                           <tr key={entry.id}>
                             <td>{index + 1}</td>
                             <td>{entry.title}</td>
@@ -744,37 +950,63 @@ export default function AdminDashboard() {
           )}
 
           {editData && (
-            <form className="admin-drawer" onSubmit={saveEdit}>
-              <h3>Edit Entry</h3>
-              {Object.entries(editData)
-                .filter(
-                  ([key]) =>
-                    ![
-                      "id",
-                      "createdAt",
-                      "entries",
-                      "status",
-                      "pdfBase64",
-                      "pdfMimeType",
-                    ].includes(key),
-                )
-                .map(([key, value]) => (
-                  <label key={key}>
-                    {key}
-                    <input
-                      name={key}
-                      defaultValue={Array.isArray(value) ? value.join(", ") : String(value ?? "")}
-                      className="subscribe-input"
-                    />
-                  </label>
-                ))}
-              <div className="admin-toolbar">
-                <button type="submit" className="subscribe-button">Save</button>
-                <button type="button" className="ghost-admin-btn" onClick={() => setEditData(null)}>
-                  Cancel
-                </button>
-              </div>
-            </form>
+            <div className="admin-edit-backdrop" role="dialog" aria-modal="true">
+              <form className="admin-edit-modal" onSubmit={saveEdit}>
+                <div className="admin-edit-head">
+                  <h3>Edit Entry</h3>
+                  <button
+                    type="button"
+                    className="ghost-admin-btn"
+                    onClick={() => setEditData(null)}
+                  >
+                    Close
+                  </button>
+                </div>
+                <div className="admin-edit-grid">
+                  {Object.entries(editData)
+                    .filter(
+                      ([key]) =>
+                        ![
+                          "id",
+                          "createdAt",
+                          "entries",
+                          "status",
+                          "publishStatus",
+                          "manuscriptId",
+                          "pdfBase64",
+                          "pdfMimeType",
+                        ].includes(key),
+                    )
+                    .map(([key, value]) => (
+                      <label key={key} className="admin-edit-field">
+                        {formatFieldLabel(key)}
+                        <input
+                          name={key}
+                          defaultValue={Array.isArray(value) ? value.join(", ") : String(value ?? "")}
+                          className="subscribe-input"
+                        />
+                      </label>
+                    ))}
+                  {activeTab === "entrySubmissions" && (
+                    <label className="admin-edit-field admin-edit-field-full">
+                      Replace PDF (optional)
+                      <input
+                        type="file"
+                        name="pdfFile"
+                        accept=".pdf,application/pdf"
+                        className="subscribe-input"
+                      />
+                    </label>
+                  )}
+                </div>
+                <div className="admin-toolbar">
+                  <button type="submit" className="subscribe-button">Save</button>
+                  <button type="button" className="ghost-admin-btn" onClick={() => setEditData(null)}>
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
           )}
         </div>
       </div>
@@ -797,6 +1029,30 @@ export default function AdminDashboard() {
                 type="button"
                 className="ghost-admin-btn"
                 onClick={() => setDeleteTarget(null)}
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDialog && (
+        <div className="admin-confirm-backdrop" role="dialog" aria-modal="true">
+          <div className="admin-confirm-modal">
+            <h3>{confirmDialog.title}</h3>
+            <p>{confirmDialog.message}</p>
+            <div className="admin-confirm-actions">
+              <button type="button" className="subscribe-button" onClick={confirmActionDialog}>
+                Yes
+              </button>
+              <button
+                type="button"
+                className="ghost-admin-btn"
+                onClick={() => {
+                  setConfirmDialog(null);
+                  pendingEditFormDataRef.current = null;
+                }}
               >
                 No
               </button>

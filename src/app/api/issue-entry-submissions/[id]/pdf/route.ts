@@ -13,7 +13,8 @@ export async function GET(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Submission not found." }, { status: 404 });
   }
 
-  const isPublic = item.status === "approved";
+  const isPublic =
+    item.status === "approved" && item.publishStatus === "published";
   if (!isPublic && !isAdminRequest(request)) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }

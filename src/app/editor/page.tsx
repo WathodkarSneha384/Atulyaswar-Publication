@@ -1,26 +1,20 @@
-import SiteFooter from "@/components/SiteFooter";
-import TopNavbar from "@/components/TopNavbar";
+import Link from "next/link";
+import Image from "next/image";
+import editorComingImage from "../../../Asset/Coming Soon Page.jpg";
 
 export default function EditorPage() {
   return (
-    <main className="page-shell">
-      <TopNavbar activePath="/editor" />
-      <div className="main-content">
-        <section className="product-card">
-          <div className="journal-logo-line">
-            <h1 className="product-title">Atulyaswar Notation Editor</h1>
-            <p className="product-subtitle">Menus Yet to be decided</p>
-          </div>
-          <div className="editor-placeholder">
-            <p>
-              This product page is now live as a dedicated route. Once client
-              requirements are finalized, menu items and notation features can
-              be added here.
-            </p>
-          </div>
-        </section>
-      </div>
-      <SiteFooter />
+    <main className="editor-coming-page">
+      <Image
+        src={editorComingImage}
+        alt="Editor coming soon background"
+        fill
+        priority
+        className="editor-coming-bg-image"
+      />
+      <Link href="/journal" className="cross-nav-fab editor-fab" aria-label="Open Journal">
+        Open Journal
+      </Link>
     </main>
   );
 }

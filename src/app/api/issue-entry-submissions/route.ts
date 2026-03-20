@@ -189,6 +189,8 @@ export async function POST(request: Request) {
     pdfMimeType,
     pdfBase64,
     submitterEmail,
+    status: "pending",
+    publishStatus: "draft",
   });
 
   try {

@@ -1,71 +1,90 @@
+import Image from "next/image";
 import Link from "next/link";
-import SiteFooter from "@/components/SiteFooter";
-import TopNavbar from "@/components/TopNavbar";
+import drSanikaImage from "../../Asset/Board_Members/Dr. Sanika Goregaonkar.jpg";
+import drVilasImage from "../../Asset/Board_Members/Dr. Vilas Jadhav.png";
+import profSheetalImage from "../../Asset/Board_Members/Prof. Sheetal More.jpg";
+import profSuneeraImage from "../../Asset/Board_Members/Prof. Suneera Kasliwal.jpg";
+import ptVidyadharImage from "../../Asset/Board_Members/Pt. Vidyadhar Vyas.jpg";
 
 export default function HomePage() {
-  const dummyClassicalImages = [
-    "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?auto=format&fit=crop&w=1400&q=80",
-    "https://images.unsplash.com/photo-1514119412350-e174d90d280e?auto=format&fit=crop&w=1400&q=80",
-    "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=1400&q=80",
+  const boardMembers = [
+    {
+      src: ptVidyadharImage,
+      name: "Pt. Vidyadhar Vyas",
+      specialization: "Senior Vocalist - Gwalior Gharana",
+    },
+    {
+      src: profSuneeraImage,
+      name: "Prof. Suneera Kasliwal",
+      specialization: "Senior Artist (Sitar)",
+    },
+    {
+      src: profSheetalImage,
+      name: "Prof. Sheetal More",
+      specialization: "Senior Academician",
+    },
+    {
+      src: drVilasImage,
+      name: "Dr. Vilas Jadhav",
+      specialization: "Deputy Librarian and Editorial Board Member",
+      imageClassName: "cover-board-image cover-board-image-contain",
+    },
+    {
+      src: drSanikaImage,
+      name: "Dr. Sanika Goregaonkar",
+      specialization: "Vocalist - Gwalior Gharana",
+    },
   ];
 
   return (
-    <main className="page-shell">
-      <TopNavbar activePath="/" />
-      <div className="main-content">
-        <section className="entry-page home-hero">
-          <div className="hero-overlay">
-            <h1 className="entry-title">Atulyaswar Music Research Journal</h1>
-            <p className="entry-subtitle">
-              Discover peer reviewed research, current issues, archive content,
-              and music scholarship updates in one place.
-            </p>
-            <div className="entry-actions">
-              <Link href="/journal" className="entry-button">
-                Enter Journal
-              </Link>
-              <Link href="/journal/submit-manuscript" className="ghost-button">
-                Submit Manuscript
-              </Link>
-            </div>
-          </div>
-        </section>
+    <main className="cover-page">
+      <div className="cover-shell">
+        <section className="cover-main-card">
+          <h1 className="cover-title">Atulyaswar - A Peer Reviewed Indian Music Journal</h1>
+          <p>
+            It is with great pride that we introduce Atulyaswar, a dedicated platform
+            for scholarship in Indian Classical Music.
+          </p>
+          <p>
+            Rooted in the Guru-Shishya Parampara and adapted for the digital age, this
+            journal bridges practitioners and researchers through open access knowledge.
+          </p>
+          <p>
+            We invite scholars and performers alike to explore, contribute, and shape
+            new perspectives in the evolving landscape of Indian music research.
+          </p>
+          <p>
+            Guided by a distinguished Editorial Board and Advisors, Atulyaswar is
+            enriched by the expertise of eminent scholars and artists who have made
+            significant contributions to Indian classical music and academia.
+          </p>
 
-        <section className="product-card">
-          <h2 className="section-title">Classical Singing Class Moments (Dummy Images)</h2>
-          <div className="dummy-image-grid">
-            {dummyClassicalImages.map((src) => (
-              <article key={src} className="dummy-image-card">
-                <div
-                  className="dummy-image"
-                  role="img"
-                  aria-label="Classical singing class"
-                  style={{ backgroundImage: `url(${src})` }}
+          <div className="cover-board-grid">
+            {boardMembers.map((member) => (
+              <article key={member.name} className="cover-board-item">
+                <Image
+                  src={member.src}
+                  alt={member.name}
+                  className={member.imageClassName ?? "cover-board-image"}
                 />
+                <div className="cover-board-content">
+                  <h3>{member.name}</h3>
+                  <p>{member.specialization}</p>
+                </div>
               </article>
             ))}
           </div>
         </section>
 
-        <section className="home-products-grid">
-          <article className="product-card highlight-card">
-            <h2 className="section-title">Atulyaswar Notation Editor</h2>
-            <p>
-              Dedicated editor module for notation workflows. Menus and advanced
-              tools can be configured in the next phase.
-            </p>
-            <div className="entry-actions">
-              <Link href="/journal" className="entry-button">
-                Open Journal
-              </Link>
-              <Link href="/editor" className="entry-button">
-                Open Editor
-              </Link>
-            </div>
-          </article>
-        </section>
+        <div className="cover-actions cover-actions-outside">
+          <Link href="/journal" className="entry-button">
+            Open Journal
+          </Link>
+          <Link href="/editor" className="ghost-button cover-ghost">
+            Open Editor
+          </Link>
+        </div>
       </div>
-      <SiteFooter />
     </main>
   );
 }

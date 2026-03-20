@@ -4,9 +4,11 @@ import path from "node:path";
 import { kv } from "@vercel/kv";
 
 export type IssueEntrySubmissionStatus = "pending" | "approved" | "rejected";
+export type IssueEntryPublishStatus = "draft" | "published";
 
 export type IssueEntrySubmission = {
   id: string;
+  manuscriptId?: string;
   issueId: string;
   issueTitle: string;
   title: string;
@@ -20,6 +22,7 @@ export type IssueEntrySubmission = {
   rejectedReason?: string;
   createdAt: string;
   status: IssueEntrySubmissionStatus;
+  publishStatus: IssueEntryPublishStatus;
 };
 
 export type ApprovedIssueEntry = {
@@ -31,10 +34,7 @@ export type ApprovedIssueEntry = {
   readUrl: string;
 };
 
-type NewSubmissionInput = Omit<
-  IssueEntrySubmission,
-  "id" | "createdAt" | "status"
->;
+type NewSubmissionInput = Omit<IssueEntrySubmission, "id" | "createdAt">;
 type UpdateSubmissionInput = Partial<
   Omit<IssueEntrySubmission, "id" | "createdAt" | "status">
 >;
@@ -86,8 +86,9 @@ export async function createIssueEntrySubmission(input: NewSubmissionInput) {
   const submission: IssueEntrySubmission = {
     id: randomUUID(),
     createdAt: new Date().toISOString(),
-    status: "pending",
     ...input,
+    status: input.status ?? "pending",
+    publishStatus: input.publishStatus ?? "draft",
   };
   all.unshift(submission);
   await writeAll(all);
@@ -110,6 +111,8 @@ export async function approveIssueEntrySubmission(id: string) {
   const updated: IssueEntrySubmission = {
     ...all[index],
     status: "approved",
+    publishStatus: "draft",
+    rejectedReason: undefined,
   };
   all[index] = updated;
   await writeAll(all);
@@ -124,6 +127,7 @@ export async function rejectIssueEntrySubmission(id: string, reason?: string) {
   const updated: IssueEntrySubmission = {
     ...all[index],
     status: "rejected",
+    publishStatus: "draft",
     rejectedReason: reason?.trim() || all[index].rejectedReason,
   };
   all[index] = updated;
@@ -163,11 +167,14 @@ export async function deleteIssueEntrySubmission(id: string) {
 
 export async function listApprovedIssueEntriesForIssue(issueId: string) {
   const all = await readAll();
-  const approved = all.filter(
-    (item) => item.issueId === issueId && item.status === "approved",
+  const approvedAndPublished = all.filter(
+    (item) =>
+      item.issueId === issueId &&
+      item.status === "approved" &&
+      item.publishStatus === "published",
   );
 
-  return approved.map<ApprovedIssueEntry>((item, index) => ({
+  return approvedAndPublished.map<ApprovedIssueEntry>((item, index) => ({
     id: item.id,
     srNo: index + 1,
     title: item.title,
@@ -175,4 +182,61 @@ export async function listApprovedIssueEntriesForIssue(issueId: string) {
     pageNo: item.pageNo,
     readUrl: item.pdfUrl ?? `/api/issue-entry-submissions/${item.id}/pdf`,
   }));
+}
+
+export async function publishApprovedIssueEntries(issueId: string) {
+  const all = await readAll();
+  let updatedCount = 0;
+
+  const next = all.map((item) => {
+    if (
+      item.issueId === issueId &&
+      item.status === "approved" &&
+      item.publishStatus !== "published"
+    ) {
+      updatedCount += 1;
+      return {
+        ...item,
+        publishStatus: "published" as const,
+      };
+    }
+    return item;
+  });
+
+  if (updatedCount > 0) {
+    await writeAll(next);
+  }
+
+  return { updatedCount };
+}
+
+export async function publishIssueEntrySubmissions(ids: string[]) {
+  if (ids.length === 0) {
+    return { updatedCount: 0 };
+  }
+
+  const idSet = new Set(ids);
+  const all = await readAll();
+  let updatedCount = 0;
+
+  const next = all.map((item) => {
+    if (
+      idSet.has(item.id) &&
+      item.status === "approved" &&
+      item.publishStatus !== "published"
+    ) {
+      updatedCount += 1;
+      return {
+        ...item,
+        publishStatus: "published" as const,
+      };
+    }
+    return item;
+  });
+
+  if (updatedCount > 0) {
+    await writeAll(next);
+  }
+
+  return { updatedCount };
 }

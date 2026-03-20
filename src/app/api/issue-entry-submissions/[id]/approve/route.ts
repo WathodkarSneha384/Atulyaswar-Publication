@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/adminAuth";
-import { addIssueEntry } from "@/lib/issueStore";
 import {
   approveIssueEntrySubmission,
   listIssueEntrySubmissions,
@@ -20,24 +19,6 @@ export async function PATCH(request: Request, context: RouteContext) {
   const item = submissions.find((submission) => submission.id === id);
   if (!item) {
     return NextResponse.json({ error: "Submission not found." }, { status: 404 });
-  }
-
-  if (item.status !== "approved") {
-    const readPdfUrl =
-      item.pdfUrl ?? `/api/issue-entry-submissions/${item.id}/pdf`;
-
-    const updatedIssue = await addIssueEntry(item.issueId, {
-      title: item.title,
-      author: item.author,
-      pageNo: item.pageNo,
-      pdfUrl: readPdfUrl,
-    });
-    if (!updatedIssue) {
-      return NextResponse.json(
-        { error: "Related issue not found." },
-        { status: 400 },
-      );
-    }
   }
 
   const approved = await approveIssueEntrySubmission(id);
