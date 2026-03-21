@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import BrandLogo from "@/components/BrandLogo";
 
 type TopNavbarProps = {
@@ -18,6 +19,8 @@ const normalizeLanguage = (value: string | null): Language => {
 
 export default function TopNavbar({ activePath }: TopNavbarProps) {
   const [language, setLanguage] = useState<Language>("english");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setLanguage(normalizeLanguage(localStorage.getItem("atulyaswar-language")));
@@ -30,6 +33,14 @@ export default function TopNavbar({ activePath }: TopNavbarProps) {
     document.addEventListener("atulyaswar-language-change", handler);
     return () => document.removeEventListener("atulyaswar-language-change", handler);
   }, []);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [activePath]);
 
   const labels = useMemo(
     () => {
@@ -104,6 +115,15 @@ export default function TopNavbar({ activePath }: TopNavbarProps) {
                 <Link href="/" className="top-row-logo" aria-label="Atulyaswar home">
                   <BrandLogo subtitle="Atulyaswar Publication" compact />
                 </Link>
+                <button
+                  type="button"
+                  className="mobile-menu-toggle"
+                  aria-label="Open navigation menu"
+                  aria-expanded={mobileMenuOpen}
+                  onClick={() => setMobileMenuOpen((prev) => !prev)}
+                >
+                  {mobileMenuOpen ? "Close" : "Menu"}
+                </button>
                 <div className="top-row-links">
                   {topRowMenu.map((item) => (
                     <Link
@@ -120,6 +140,29 @@ export default function TopNavbar({ activePath }: TopNavbarProps) {
           </div>
         </div>
       </div>
+      {isMounted && mobileMenuOpen
+        ? createPortal(
+            <div className="mobile-drawer-backdrop" onClick={() => setMobileMenuOpen(false)}>
+              <nav
+                className="mobile-nav-drawer"
+                aria-label="Mobile navigation menu"
+                onClick={(event) => event.stopPropagation()}
+              >
+                {topRowMenu.map((item) => (
+                  <Link
+                    key={`mobile-${item.href}`}
+                    href={item.href}
+                    className={`mobile-drawer-item ${activePath === item.href ? "active" : ""}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>,
+            document.body,
+          )
+        : null}
     </header>
   );
 }

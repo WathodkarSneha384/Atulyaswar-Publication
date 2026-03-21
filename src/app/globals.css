@@ -386,6 +386,21 @@ a {
   line-height: 1.1;
 }
 
+.mobile-menu-toggle {
+  display: none;
+  border: 1px solid #d9c3d4;
+  background: #fff;
+  color: #333333;
+  border-radius: 8px;
+  padding: 0.32rem 0.58rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mobile-drawer-backdrop {
+  display: none;
+}
+
 .top-navbar-secondary-row {
   margin-top: 0;
   padding: 0.24rem 0.5rem;
@@ -1190,11 +1205,11 @@ a {
 .editor-coming-page {
   position: relative;
   overflow: hidden;
-  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
-  background: #1e2430;
-  padding: 1rem;
+  background: #0e1622;
+  padding: 0.6rem;
 }
 
 .editor-coming-bg-image {
@@ -2374,30 +2389,74 @@ a {
 }
 
 @media (max-width: 900px) {
+  .top-header {
+    z-index: 140;
+  }
+
   .header-right {
     width: 100%;
     justify-content: flex-start;
   }
 
-  .top-navbar-primary-row,
-  .top-navbar-secondary-row {
-    width: 100%;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .top-row-links .menu-item,
-  .top-navbar-secondary-row .menu-item {
-    flex: 0 0 auto;
+  .top-navbar-primary-row {
+    justify-content: space-between;
   }
 
   .top-row-links {
-    margin-left: clamp(0.5rem, 3vw, 1rem);
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
+    display: none;
+  }
+
+  .top-row-logo {
+    flex: 0 0 auto;
+  }
+
+  .mobile-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-drawer-backdrop {
+    position: fixed;
+    top: 74px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9998;
+    background: rgba(20, 10, 18, 0.42);
+    display: block;
+  }
+
+  .mobile-nav-drawer {
+    position: fixed;
+    top: 74px;
+    right: 0;
+    width: min(84vw, 320px);
+    bottom: 0;
+    height: auto;
+    z-index: 9999;
+    background: #ffffff;
+    border-left: 1px solid #e3d0de;
+    box-shadow: -10px 0 26px rgba(48, 19, 42, 0.22);
+    padding: 0.85rem;
+    display: grid;
+    align-content: start;
+    gap: 0.45rem;
+    overflow-y: auto;
+  }
+
+  .mobile-drawer-item {
+    border: 1px solid #e6d4e2;
+    border-radius: 8px;
+    padding: 0.5rem 0.62rem;
+    color: #333333;
+    font-weight: 600;
+  }
+
+  .mobile-drawer-item.active {
+    border-color: var(--accent);
+    color: #fff;
+    background: var(--accent);
   }
 
   .home-hero {
@@ -2448,7 +2507,9 @@ a {
   }
 
   .top-header {
-    position: static;
+    position: sticky;
+    top: 0;
+    z-index: 140;
   }
 
   .faq-summary {
@@ -2512,7 +2573,9 @@ a {
 
 @media (max-width: 768px) {
   .main-content {
-    width: 96%;
+    width: 100%;
+    padding: 0 0.6rem;
+    box-sizing: border-box;
     margin: 0.75rem auto 1.5rem;
     gap: 1rem;
   }
@@ -2528,13 +2591,88 @@ a {
     text-align: center;
   }
 
+  .editor-coming-page {
+    padding: 0.35rem;
+  }
+
+  .editor-coming-bg-image {
+    object-fit: contain;
+    object-position: center;
+  }
+
+  .product-card {
+    padding: 0.9rem;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .journal-content {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .journal-content h2 {
+    font-size: clamp(1.1rem, 4.8vw, 1.35rem);
+  }
+
+  .chart-heading {
+    font-size: clamp(1rem, 4.4vw, 1.2rem);
+    overflow-wrap: anywhere;
+  }
+
+  .journal-content table,
+  .issue-table,
+  .admin-table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .issue-table th,
+  .issue-table td,
+  .admin-table th,
+  .admin-table td {
+    padding: 0.38rem 0.45rem;
+    font-size: 0.88rem;
+  }
+
+  .issue-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+    align-items: center;
+  }
+
+  .issue-table {
+    min-width: 520px;
+  }
+
   .chart-placeholder {
     padding: 0.75rem;
     overflow-x: auto;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .chart-bars {
-    min-width: 540px;
+    min-width: 460px;
+  }
+
+  .journal-chart-wrap,
+  .founder-layout,
+  .founder-card,
+  .journal-side-panel,
+  .side-widget,
+  .announcements-block,
+  .indexed-strip,
+  .signup-strip {
+    min-width: 0;
+    max-width: 100%;
   }
 
   .founder-photo {
@@ -2552,9 +2690,139 @@ a {
 
   .archive-top-bar {
     align-items: stretch;
+    gap: 0.55rem;
+    flex-direction: column;
   }
 
   .archive-search-input {
+    width: 100%;
+  }
+
+  .archive-issue-selector {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .archive-issue-chip {
+    width: 100%;
+    white-space: normal;
+  }
+
+  .archive-issue-heading {
+    font-size: 0.95rem;
+    line-height: 1.45;
+  }
+
+  .archive-pdf-modal {
+    width: 100%;
+    max-height: 94vh;
+    padding: 0.65rem;
+  }
+
+  .archive-pdf-frame {
+    min-height: 48vh;
+  }
+
+  .archive-pdf-actions {
+    gap: 0.45rem;
+  }
+
+  .archive-pdf-actions .inline-link {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-dashboard {
+    padding: 0.7rem;
+  }
+
+  .admin-dashboard-head {
+    align-items: stretch;
+  }
+
+  .admin-dashboard-head .admin-toolbar {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .admin-layout {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .admin-sidebar {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    gap: 0.4rem;
+    padding: 0.45rem;
+  }
+
+  .admin-side-item {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-size: 0.86rem;
+    padding: 0.42rem 0.55rem;
+  }
+
+  .admin-content {
+    padding: 0.55rem;
+    overflow-x: hidden;
+  }
+
+  .admin-toolbar-right {
+    justify-content: stretch;
+  }
+
+  .admin-toolbar-right .subscribe-button,
+  .admin-toolbar-right .ghost-admin-btn {
+    width: 100%;
+  }
+
+  .action-cell {
+    gap: 0.28rem;
+  }
+
+  .action-cell button,
+  .action-cell a {
+    font-size: 0.8rem;
+    padding: 0.22rem 0.36rem;
+  }
+
+  .action-cell .icon-action-btn {
+    width: 30px;
+    height: 30px;
+  }
+
+  .admin-drawer {
+    padding: 0.55rem;
+  }
+
+  .admin-edit-modal {
+    width: 100%;
+    max-height: 92vh;
+    padding: 0.7rem;
+  }
+
+  .admin-edit-head h3 {
+    font-size: 1rem;
+  }
+
+  .admin-confirm-modal {
+    width: 100%;
+    padding: 0.75rem;
+  }
+
+  .admin-confirm-actions {
+    justify-content: stretch;
+  }
+
+  .admin-confirm-actions .subscribe-button,
+  .admin-confirm-actions .ghost-admin-btn {
     width: 100%;
   }
 
@@ -2569,9 +2837,9 @@ a {
   }
 
   .contact-submit-btn {
-    width: auto;
-    min-width: 170px;
-    justify-self: center;
+    width: 100%;
+    min-width: 0;
+    justify-self: stretch;
   }
 
   .cover-gallery-grid {
@@ -2595,8 +2863,9 @@ a {
 
 @media (max-width: 560px) {
   .header-inner {
-    width: 96%;
-    padding: 0.4rem 0 0.55rem;
+    width: 100%;
+    padding: 0.4rem 0.55rem 0.55rem;
+    box-sizing: border-box;
   }
 
   .double-navbar {
@@ -2605,10 +2874,6 @@ a {
 
   .top-navbar-primary-row {
     padding: 0.4rem 0.45rem;
-  }
-
-  .top-row-links {
-    margin-left: 0.4rem;
   }
 
   .top-navbar-secondary-row {
@@ -2664,6 +2929,61 @@ a {
     width: 100%;
   }
 
+  .issue-table {
+    min-width: 430px;
+  }
+
+  .issue-table th,
+  .issue-table td {
+    padding: 0.32rem 0.4rem;
+    font-size: 0.82rem;
+  }
+
+  .archive-issue-chip {
+    font-size: 0.82rem;
+    padding: 0.3rem 0.45rem;
+  }
+
+  .archive-pagination {
+    justify-content: space-between;
+  }
+
+  .archive-pagination button {
+    font-size: 0.82rem;
+    padding: 0.28rem 0.45rem;
+  }
+
+  .archive-pdf-frame {
+    min-height: 42vh;
+  }
+
+  .admin-dashboard {
+    padding: 0.55rem;
+  }
+
+  .admin-content {
+    padding: 0.45rem;
+  }
+
+  .admin-table {
+    min-width: 540px;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.38rem;
+  }
+
+  .admin-edit-backdrop,
+  .admin-confirm-backdrop {
+    padding: 0.5rem;
+  }
+
+  .admin-edit-modal {
+    max-height: 94vh;
+  }
+
   .floating-language {
     right: 10px;
     bottom: 10px;
@@ -2683,7 +3003,8 @@ a {
   }
 
   .editor-fab {
-    bottom: 12px;
+    bottom: 10px;
+    right: 8px;
   }
 
   .cover-shell {
@@ -2710,4 +3031,19 @@ a {
   .manuscript-designation-grid {
     grid-template-columns: 1fr;
   }
+
+  .manuscript-fieldset legend {
+    font-size: 0.95rem;
+  }
+
+  .file-picker-row {
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
+  }
+
+  .file-picker-name {
+    width: 100%;
+    min-width: 0;
+  }
 }
+
