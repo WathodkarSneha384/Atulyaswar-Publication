@@ -53,32 +53,37 @@ export default function TopNavbar({ activePath }: TopNavbarProps) {
       <div className="header-inner">
         <div className="header-main">
           <div className="header-nav-rows">
-            <div className="double-navbar" aria-label="Main navigation">
-              <nav className="top-navbar top-navbar-primary-row" aria-label="Primary menu">
-                <Link href="/" className="top-row-logo" aria-label="Atulyaswar home">
-                  <BrandLogo subtitle="Atulyaswar Publication" compact />
-                </Link>
-                <button
-                  type="button"
-                  className="mobile-menu-toggle"
-                  aria-label="Open navigation menu"
-                  aria-expanded={mobileMenuOpen}
-                  onClick={() => setMobileMenuOpen((prev) => !prev)}
-                >
-                  {mobileMenuOpen ? "Close" : "Menu"}
-                </button>
-                <div className="top-row-links">
-                  {topRowMenu.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`menu-item menu-item-top ${activePath === item.href ? "active" : ""}`}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-              </nav>
+            <div className="top-navbar-grid">
+              <Link href="/" className="top-row-logo" aria-label="Atulyaswar home">
+                <BrandLogo subtitle="Atulyaswar Publication" compact />
+              </Link>
+              <div className="top-meta-issn" aria-label="ISSN information">
+                <p>ISSN - xxxx-xxxx</p>
+              </div>
+              <div className="double-navbar" aria-label="Main navigation">
+                <nav className="top-navbar top-navbar-primary-row" aria-label="Primary menu">
+                  <button
+                    type="button"
+                    className="mobile-menu-toggle"
+                    aria-label="Open navigation menu"
+                    aria-expanded={mobileMenuOpen}
+                    onClick={() => setMobileMenuOpen((prev) => !prev)}
+                  >
+                    {mobileMenuOpen ? "Close" : "Menu"}
+                  </button>
+                  <div className="top-row-links">
+                    {topRowMenu.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`menu-item menu-item-top ${activePath === item.href ? "active" : ""}`}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </nav>
+              </div>
             </div>
           </div>
         </div>
