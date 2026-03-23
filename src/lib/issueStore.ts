@@ -39,12 +39,19 @@ type NewEntryInput = {
 };
 type UpdateIssueInput = Partial<Pick<JournalIssue, "year" | "volume" | "issueNo" | "title" | "status">>;
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_DIR = process.env.VERCEL
+  ? path.join("/tmp", "atulyaswar-data")
+  : path.join(process.cwd(), "data");
 const DATA_FILE = path.join(DATA_DIR, "issues.json");
 const KV_KEY = "atulyaswar:issues";
 
 function hasKvConfig() {
-  return Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+  const rawUrl = process.env.KV_REST_API_URL ?? "";
+  const rawToken = process.env.KV_REST_API_TOKEN ?? "";
+  const url = rawUrl.trim();
+  const token = rawToken.trim();
+  const hasWhitespace = /\s/.test(rawUrl) || /\s/.test(rawToken);
+  return !hasWhitespace && url.startsWith("https://") && token.length > 0;
 }
 
 async function ensureDataFile() {

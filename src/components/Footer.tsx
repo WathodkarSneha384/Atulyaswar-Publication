@@ -64,7 +64,7 @@ export default function Footer() {
               Connect
             </h4>
             <ul className="space-y-3">
-              {["Twitter", "Instagram", "LinkedIn", "Facebook"].map(
+              {["Twitter", "LinkedIn"].map(
                 (social) => (
                   <li key={social}>
                     <a

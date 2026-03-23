@@ -100,7 +100,7 @@ export default function SiteFooter() {
             editor: "Notation Editor",
             location: "Pune, Maharashtra, India",
             rights: "All rights reserved.",
-            designed: "Designed for journal-first publishing.",
+            designed: "Website designed by",
           },
     [language],
   );
@@ -109,39 +109,15 @@ export default function SiteFooter() {
     <footer className="site-footer">
       <div className="site-footer-inner">
         <div className="footer-grid">
-          <section className="footer-brand">
-            <p className="footer-kicker">{t.publication}</p>
-            <h3>{t.journalName}</h3>
-            <p className="footer-muted">
-              {t.description}
-            </p>
-            <div className="footer-socials">
-              <Link href="#" aria-label="Instagram">
-                Instagram
-              </Link>
-              <Link href="#" aria-label="YouTube">
-                YouTube
-              </Link>
-              <Link href="#" aria-label="Telegram">
-                Telegram
-              </Link>
-            </div>
-          </section>
-
-          <section>
-            <h4 className="footer-title">{t.resources}</h4>
-            <div className="footer-links">
-              <Link href="/journal/manuscripts">{t.manuscripts}</Link>
-              <Link href="/journal/open-access-policy">{t.policy}</Link>
-            </div>
-          </section>
-
-          <section>
-            <h4 className="footer-title">{t.contact}</h4>
-            <p className="footer-muted">{t.location}</p>
-            <p className="footer-muted">Email: atulyaswarpublication@gmail.com</p>
-            <p className="footer-muted">Phone: +91 9765556976</p>
-          </section>
+          <div className="footer-inline-row">
+            <Link href="/journal/open-access-policy" className="footer-policy-link">
+              {t.policy}
+            </Link>
+            <span className="footer-inline-divider">|</span>
+            <span className="footer-inline-item">Email: atulyaswarpublication@gmail.com</span>
+            <span className="footer-inline-divider">|</span>
+            <span className="footer-inline-item">Phone No: +91 9765556976</span>
+          </div>
         </div>
 
         <div className="footer-bottom">

@@ -3,7 +3,10 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 
 type AttachmentKind = "paper" | "plagiarism";
 
-const UPLOAD_DIR = path.join(process.cwd(), "data", "manuscript-uploads");
+const DATA_DIR = process.env.VERCEL
+  ? path.join("/tmp", "atulyaswar-data")
+  : path.join(process.cwd(), "data");
+const UPLOAD_DIR = path.join(DATA_DIR, "manuscript-uploads");
 
 function fileExtension(fileName: string) {
   const ext = path.extname(fileName).toLowerCase();

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import BrandLogo from "@/components/BrandLogo";
 
@@ -9,30 +9,9 @@ type TopNavbarProps = {
   activePath: string;
 };
 
-type Language = "english" | "hindi" | "marathi";
-
-const normalizeLanguage = (value: string | null): Language => {
-  if (value === "hindi" || value === "hi") return "hindi";
-  if (value === "marathi" || value === "mr") return "marathi";
-  return "english";
-};
-
 export default function TopNavbar({ activePath }: TopNavbarProps) {
-  const [language, setLanguage] = useState<Language>("english");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setLanguage(normalizeLanguage(localStorage.getItem("atulyaswar-language")));
-
-    const handler = (event: Event) => {
-      const custom = event as CustomEvent<Language>;
-      setLanguage(normalizeLanguage(custom.detail));
-    };
-
-    document.addEventListener("atulyaswar-language-change", handler);
-    return () => document.removeEventListener("atulyaswar-language-change", handler);
-  }, []);
 
   useEffect(() => {
     setIsMounted(true);
@@ -42,60 +21,24 @@ export default function TopNavbar({ activePath }: TopNavbarProps) {
     setMobileMenuOpen(false);
   }, [activePath]);
 
-  const labels = useMemo(
-    () => {
-      if (language === "hindi") {
-        return {
-          Home: "होम",
-          Journal: "जर्नल",
-          Editor: "एडिटर",
-          About: "परिचय",
-          Board: "बोर्ड सदस्य",
-          CurrentIssue: "वर्तमान अंक",
-          Archive: "आर्काइव",
-          Submit: "पांडुलिपि जमा करें",
-          Guidelines: "गाइडलाइंस",
-          ContactUs: "संपर्क करें",
-          FAQ: "सामान्य प्रश्न",
-        };
-      }
-
-      if (language === "marathi") {
-        return {
-          Home: "मुख्यपृष्ठ",
-          Journal: "जर्नल",
-          Editor: "एडिटर",
-          About: "माहिती",
-          Board: "मंडळ सदस्य",
-          CurrentIssue: "सध्याचा अंक",
-          Archive: "संग्रह",
-          Submit: "हस्तलिखित सादर करा",
-          Guidelines: "मार्गदर्शक सूचना",
-          ContactUs: "संपर्क करा",
-          FAQ: "प्रश्नोत्तरे",
-        };
-      }
-
-      return {
-        Home: "Home",
-        Journal: "Journal",
-        Editor: "Editor",
-        About: "About",
-        Board: "Board Members",
-        CurrentIssue: "Current Issue",
-        Archive: "Archive",
-        Submit: "Submit Manuscript",
-        Guidelines: "Guidelines",
-        ContactUs: "Contact Us",
-        FAQ: "FAQ",
-      };
-    },
-    [language],
-  );
+  const labels = {
+    Home: "Home",
+    Journal: "Journal",
+    Editor: "Editor",
+    About: "About",
+    Board: "Board Members",
+    CurrentIssue: "Current Issue",
+    Archive: "Archive",
+    Submit: "Submit Manuscript",
+    Guidelines: "Guidelines",
+    ContactUs: "Contact Us",
+    FAQ: "FAQ",
+  };
 
   const topRowMenu = [
     { label: labels.Home, href: "/" },
     { label: labels.Journal, href: "/journal" },
+    { label: labels.About, href: "/journal/about" },
     { label: labels.Board, href: "/journal/editorial-board" },
     { label: labels.CurrentIssue, href: "/journal/current-issue" },
     { label: labels.Archive, href: "/journal/archive" },

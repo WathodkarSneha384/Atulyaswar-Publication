@@ -5,7 +5,7 @@ const faqItems = [
   {
     question: "Who can submit the manuscript/research paper?",
     answer:
-      "atulyaswarpublication@gmail.com | +91 9765556976 | All Musicians, Singers, Academicians, Researchers, Students, Scholars",
+      "All Musicians, Singers, Academicians, Researchers, Students, Scholars",
   },
   {
     question: "How to write and submit the manuscript/research paper?",
