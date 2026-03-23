@@ -2061,6 +2061,10 @@ a {
   color: #5f2f52;
 }
 
+.admin-edit-field .subscribe-input {
+  font-weight: 400;
+}
+
 .admin-edit-field-full {
   grid-column: 1 / -1;
 }
@@ -2078,7 +2082,7 @@ a {
 .admin-confirm-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 90;
+  z-index: 110;
   background: rgba(28, 13, 26, 0.45);
   display: grid;
   place-items: center;

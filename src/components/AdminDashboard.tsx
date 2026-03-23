@@ -153,7 +153,7 @@ function ActionIcon({ action }: { action: IconAction }) {
 const tabs: { key: TabKey; label: string }[] = [
   { key: "manuscripts", label: "Manuscripts" },
   { key: "issues", label: "Issues" },
-  { key: "entrySubmissions", label: "Issue Entry Submissions" },
+  { key: "entrySubmissions", label: "Issue To Publish" },
 ];
 
 export default function AdminDashboard() {
