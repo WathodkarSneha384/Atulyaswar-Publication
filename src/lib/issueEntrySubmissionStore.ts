@@ -58,8 +58,15 @@ async function ensureDataFile() {
 
 async function readAll(): Promise<IssueEntrySubmission[]> {
   if (hasKvConfig()) {
-    const data = await kv.get<IssueEntrySubmission[]>(KV_KEY);
-    return Array.isArray(data) ? data : [];
+    try {
+      const data = await kv.get<IssueEntrySubmission[]>(KV_KEY);
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error(
+        "[atulyaswar] KV read failed (issue entry submissions); falling back to local file.",
+        error,
+      );
+    }
   }
 
   await ensureDataFile();
@@ -74,8 +81,15 @@ async function readAll(): Promise<IssueEntrySubmission[]> {
 
 async function writeAll(items: IssueEntrySubmission[]) {
   if (hasKvConfig()) {
-    await kv.set(KV_KEY, items);
-    return;
+    try {
+      await kv.set(KV_KEY, items);
+      return;
+    } catch (error) {
+      console.error(
+        "[atulyaswar] KV write failed (issue entry submissions); falling back to local file.",
+        error,
+      );
+    }
   }
   await ensureDataFile();
   await writeFile(DATA_FILE, JSON.stringify(items, null, 2), "utf8");

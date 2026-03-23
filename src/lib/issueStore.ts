@@ -58,8 +58,15 @@ async function ensureDataFile() {
 
 async function readAll(): Promise<JournalIssue[]> {
   if (hasKvConfig()) {
-    const records = await kv.get<JournalIssue[]>(KV_KEY);
-    return Array.isArray(records) ? records : [];
+    try {
+      const records = await kv.get<JournalIssue[]>(KV_KEY);
+      return Array.isArray(records) ? records : [];
+    } catch (error) {
+      console.error(
+        "[atulyaswar] KV read failed (issues); falling back to local file.",
+        error,
+      );
+    }
   }
 
   await ensureDataFile();
@@ -74,8 +81,15 @@ async function readAll(): Promise<JournalIssue[]> {
 
 async function writeAll(records: JournalIssue[]) {
   if (hasKvConfig()) {
-    await kv.set(KV_KEY, records);
-    return;
+    try {
+      await kv.set(KV_KEY, records);
+      return;
+    } catch (error) {
+      console.error(
+        "[atulyaswar] KV write failed (issues); falling back to local file.",
+        error,
+      );
+    }
   }
 
   await ensureDataFile();
