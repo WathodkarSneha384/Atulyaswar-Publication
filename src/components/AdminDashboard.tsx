@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiErrorMessage, caughtErrorMessage } from "@/lib/userMessage";
 
 type TabKey = "manuscripts" | "issues" | "entrySubmissions";
 
@@ -220,7 +221,9 @@ export default function AdminDashboard() {
       if (tab === "manuscripts") {
         const response = await fetch("/api/manuscripts?scope=all");
         const data = (await response.json()) as { items?: ManuscriptItem[]; error?: string };
-        if (!response.ok) throw new Error(data.error ?? "Failed to load manuscripts.");
+        if (!response.ok) {
+          throw new Error(apiErrorMessage(data.error, "Failed to load manuscripts."));
+        }
         setManuscripts(data.items ?? []);
       } else if (tab === "issues") {
         const [issuesResponse, submissionsResponse] = await Promise.all([
@@ -229,14 +232,18 @@ export default function AdminDashboard() {
         ]);
 
         const issuesData = (await issuesResponse.json()) as { items?: IssueItem[]; error?: string };
-        if (!issuesResponse.ok) throw new Error(issuesData.error ?? "Failed to load issues.");
+        if (!issuesResponse.ok) {
+          throw new Error(apiErrorMessage(issuesData.error, "Failed to load issues."));
+        }
 
         const submissionsData = (await submissionsResponse.json()) as {
           items?: IssueEntrySubmission[];
           error?: string;
         };
         if (!submissionsResponse.ok) {
-          throw new Error(submissionsData.error ?? "Failed to load issue submissions.");
+          throw new Error(
+            apiErrorMessage(submissionsData.error, "Failed to load issue submissions."),
+          );
         }
 
         setIssues(issuesData.items ?? []);
@@ -244,11 +251,13 @@ export default function AdminDashboard() {
       } else {
         const response = await fetch("/api/issue-entry-submissions?scope=all");
         const data = (await response.json()) as { items?: IssueEntrySubmission[]; error?: string };
-        if (!response.ok) throw new Error(data.error ?? "Failed to load issue submissions.");
+        if (!response.ok) {
+          throw new Error(apiErrorMessage(data.error, "Failed to load issue submissions."));
+        }
         setEntrySubmissions(data.items ?? []);
       }
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Failed to load data.");
+      setError(caughtErrorMessage(loadError, "Failed to load data."));
     } finally {
       setLoading(false);
     }
@@ -282,7 +291,7 @@ export default function AdminDashboard() {
     const response = await fetch(endpoint, { method: "DELETE" });
     const data = (await response.json()) as { ok?: boolean; error?: string };
     if (!response.ok || !data.ok) {
-      setError(data.error ?? "Delete failed.");
+      setError(apiErrorMessage(data.error, "Delete failed."));
       return;
     }
     setSuccess("Deleted successfully.");
@@ -343,7 +352,7 @@ export default function AdminDashboard() {
 
     const data = (await response.json()) as { ok?: boolean; error?: string };
     if (!response.ok || !data.ok) {
-      setError(data.error ?? "Update failed.");
+      setError(apiErrorMessage(data.error, "Update failed."));
       return;
     }
 
@@ -377,7 +386,7 @@ export default function AdminDashboard() {
       publishedCount?: number;
     };
     if (!response.ok || !data.ok) {
-      setError(data.error ?? "Publish failed.");
+      setError(apiErrorMessage(data.error, "Publish failed."));
       return;
     }
     setSuccess(`Published ${data.publishedCount ?? 0} approved entries.`);
@@ -408,7 +417,7 @@ export default function AdminDashboard() {
       publishedCount?: number;
     };
     if (!response.ok || !data.ok) {
-      setError(data.error ?? "Publish failed.");
+      setError(apiErrorMessage(data.error, "Publish failed."));
       return;
     }
     setSelectedSubmissionIds([]);
@@ -484,7 +493,7 @@ export default function AdminDashboard() {
     });
     const data = (await response.json()) as { ok?: boolean; error?: string };
     if (!response.ok || !data.ok) {
-      setError(data.error ?? "Approve failed.");
+      setError(apiErrorMessage(data.error, "Approve failed."));
       return;
     }
     setSuccess("Manuscript approved.");
@@ -504,7 +513,7 @@ export default function AdminDashboard() {
     });
     const data = (await response.json()) as { ok?: boolean; error?: string };
     if (!response.ok || !data.ok) {
-      setError(data.error ?? "Reject failed.");
+      setError(apiErrorMessage(data.error, "Reject failed."));
       return;
     }
     setSuccess("Manuscript rejected.");
@@ -526,7 +535,7 @@ export default function AdminDashboard() {
     });
     const data = (await response.json()) as { ok?: boolean; error?: string };
     if (!response.ok || !data.ok) {
-      setError(data.error ?? "Failed to create issue.");
+      setError(apiErrorMessage(data.error, "Failed to create issue."));
       return;
     }
     setNewIssue({ title: "" });
@@ -803,7 +812,8 @@ export default function AdminDashboard() {
                 required
               />
               <p className="admin-auto-issue-note">
-                Volume/Issue are auto-generated (Issue 1: Jan-Jun, Issue 2: Jul-Dec).
+                Volume/Issue follow a July–June volume year: Issue 1 (Jul–Dec) and Issue 2
+                (Jan–Jun) share the same volume; the create date sets which half you are opening.
               </p>
               <button type="submit" className="subscribe-button">Create Issue</button>
             </form>

@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { apiErrorMessage, caughtErrorMessage } from "@/lib/userMessage";
 
 type SubmitState = "idle" | "submitting" | "success" | "error";
 type FieldErrors = Partial<
@@ -158,7 +159,7 @@ export default function SubmitManuscriptForm() {
       const data = (await response.json()) as { error?: string; ok?: boolean };
 
       if (!response.ok || !data.ok) {
-        throw new Error(data.error ?? "Could not submit manuscript.");
+        throw new Error(apiErrorMessage(data.error, "Could not submit manuscript."));
       }
 
       form.reset();
@@ -171,9 +172,7 @@ export default function SubmitManuscriptForm() {
       );
     } catch (error) {
       setState("error");
-      setMessage(
-        error instanceof Error ? error.message : "Could not submit manuscript.",
-      );
+      setMessage(caughtErrorMessage(error, "Could not submit manuscript."));
     }
   }
 

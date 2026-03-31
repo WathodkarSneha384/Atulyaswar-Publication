@@ -60,20 +60,30 @@ async function sendSubmissionEmails(options: {
   plagiarismFile: File;
 }) {
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return;
+  if (!apiKey) {
+    return {
+      authorEmailSent: false,
+      adminEmailSent: false,
+      reason: "RESEND_API_KEY is missing.",
+    };
+  }
 
   const toEmail =
     process.env.MANUSCRIPT_TO_EMAIL ?? process.env.CONTACT_TO_EMAIL ?? ADMIN_SUBMISSION_EMAIL;
 
   const fromEmail =
-    process.env.CONTACT_FROM_EMAIL ?? "Atulyaswar Contact <onboarding@resend.dev>";
+    process.env.MANUSCRIPT_FROM_EMAIL ??
+    process.env.CONTACT_FROM_EMAIL ??
+    "Atulyaswar Contact <onboarding@resend.dev>";
   const resend = new Resend(apiKey);
 
   const paperBytes = Buffer.from(await options.paperFile.arrayBuffer());
   const plagiarismBytes = Buffer.from(await options.plagiarismFile.arrayBuffer());
 
-  await Promise.all([
-    resend.emails.send({
+  let authorEmailSent = false;
+  let adminEmailSent = false;
+
+  const authorResult = await resend.emails.send({
       from: fromEmail,
       to: [options.email],
       subject: "Manuscript received",
@@ -83,8 +93,17 @@ async function sendSubmissionEmails(options: {
         "Regards,",
         "Atulyaswar - A peer reviewed, Indian Music Journal",
       ].join("\n"),
-    }),
-    resend.emails.send({
+    });
+  if (authorResult.error) {
+    console.error("[manuscripts] author acknowledgement email failed", {
+      to: options.email,
+      error: authorResult.error,
+    });
+  } else {
+    authorEmailSent = true;
+  }
+
+  const adminResult = await resend.emails.send({
       from: fromEmail,
       to: [toEmail],
       replyTo: options.email,
@@ -112,8 +131,25 @@ async function sendSubmissionEmails(options: {
           content: plagiarismBytes,
         },
       ],
-    }),
-  ]);
+    });
+  if (adminResult.error) {
+    console.error("[manuscripts] admin notification email failed", {
+      to: toEmail,
+      replyTo: options.email,
+      error: adminResult.error,
+    });
+  } else {
+    adminEmailSent = true;
+  }
+
+  return {
+    authorEmailSent,
+    adminEmailSent,
+    reason:
+      !authorEmailSent || !adminEmailSent
+        ? "One or more emails were not accepted by the email provider."
+        : undefined,
+  };
 }
 
 export async function GET(request: Request) {
@@ -247,26 +283,16 @@ export async function POST(request: Request) {
     // Non-blocking: attachments are also persisted in manuscript record.
   }
 
-  try {
-    await sendSubmissionEmails({
-      authorNames,
-      title,
-      email,
-      phone,
-      address,
-      designations,
-      paperFile,
-      plagiarismFile,
-    });
-  } catch {
-    return NextResponse.json(
-      {
-        error:
-          "Submission saved, but email could not be sent right now. Please contact the journal office.",
-      },
-      { status: 500 },
-    );
-  }
+  const emailStatus = await sendSubmissionEmails({
+    authorNames,
+    title,
+    email,
+    phone,
+    address,
+    designations,
+    paperFile,
+    plagiarismFile,
+  });
 
-  return NextResponse.json({ ok: true, id: record.id });
+  return NextResponse.json({ ok: true, id: record.id, emailStatus });
 }

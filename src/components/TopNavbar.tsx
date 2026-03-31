@@ -23,10 +23,7 @@ export default function TopNavbar({ activePath }: TopNavbarProps) {
 
   const labels = {
     Home: "Home",
-    Journal: "Journal",
-    Editor: "Editor",
     About: "About",
-    Board: "Board Members",
     CurrentIssue: "Current Issue",
     Archive: "Archive",
     Submit: "Submit Manuscript",
@@ -37,9 +34,7 @@ export default function TopNavbar({ activePath }: TopNavbarProps) {
 
   const topRowMenu = [
     { label: labels.Home, href: "/" },
-    { label: labels.Journal, href: "/journal" },
     { label: labels.About, href: "/journal/about" },
-    { label: labels.Board, href: "/journal/editorial-board" },
     { label: labels.CurrentIssue, href: "/journal/current-issue" },
     { label: labels.Archive, href: "/journal/archive" },
     { label: labels.FAQ, href: "/faq" },

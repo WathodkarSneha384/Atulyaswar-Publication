@@ -201,7 +201,7 @@ export async function listApprovedIssueEntriesForIssue(issueId: string) {
     title: item.title,
     author: item.author,
     pageNo: item.pageNo,
-    readUrl: item.pdfUrl ?? `/api/issue-entry-submissions/${item.id}/pdf`,
+    readUrl: item.pdfUrl ?? (item.pdfBase64 ? `/api/issue-entry-submissions/${item.id}/pdf` : ""),
   }));
 }
 

@@ -2,9 +2,10 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiErrorMessage, caughtErrorMessage } from "@/lib/userMessage";
 
 export default function AdminLoginForm() {
-  const [key, setKey] = useState("");
+  const [adminKey, setAdminKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -18,18 +19,18 @@ export default function AdminLoginForm() {
       const response = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key }),
+        body: JSON.stringify({ key: adminKey }),
       });
       const data = (await response.json()) as { ok?: boolean; error?: string };
 
       if (!response.ok || !data.ok) {
-        throw new Error(data.error ?? "Login failed.");
+        throw new Error(apiErrorMessage(data.error, "Login failed."));
       }
 
       router.push("/admin/manuscripts");
       router.refresh();
     } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : "Login failed.");
+      setError(caughtErrorMessage(loginError, "Login failed."));
     } finally {
       setLoading(false);
     }
@@ -45,8 +46,8 @@ export default function AdminLoginForm() {
           <input
             className="subscribe-input"
             type="password"
-            value={key}
-            onChange={(event) => setKey(event.target.value)}
+            value={adminKey}
+            onChange={(event) => setAdminKey(event.target.value)}
             required
           />
         </label>

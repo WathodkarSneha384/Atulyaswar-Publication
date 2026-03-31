@@ -2,7 +2,10 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { kv } from "@vercel/kv";
-import { getVolumeIssueByYearAndIssue } from "@/lib/volumeIssue";
+import {
+  getIssueFieldsFromPublicationDate,
+  getVolumeStartYearFromIssueRecord,
+} from "@/lib/volumeIssue";
 
 export type IssueStatus = "current" | "archive";
 
@@ -147,22 +150,18 @@ export async function createIssue(input: NewIssueInput) {
   );
 
   const publicationDate = input.publicationDate ?? new Date();
-  const year = String(publicationDate.getFullYear());
-  const issuesInYear = updated.filter((item) => item.year === year);
+  const { year, volume, issueNo, issueNumber, volumeStartYear } =
+    getIssueFieldsFromPublicationDate(publicationDate);
 
-  // Enforce 2 issues per year: first create => issue 1, second create => issue 2.
-  let issueNumber: 1 | 2;
-  if (!issuesInYear.some((item) => item.issueNo === "1")) {
-    issueNumber = 1;
-  } else if (!issuesInYear.some((item) => item.issueNo === "2")) {
-    issueNumber = 2;
-  } else {
-    throw new Error(`Two issues are already created for year ${year}.`);
+  const duplicate = updated.some((item) => {
+    const vy = getVolumeStartYearFromIssueRecord(item.year, item.issueNo);
+    return vy === volumeStartYear && item.issueNo === String(issueNumber);
+  });
+  if (duplicate) {
+    throw new Error(
+      `Issue ${issueNumber} already exists for the volume year starting July ${volumeStartYear}.`,
+    );
   }
-
-  const volumeIssue = getVolumeIssueByYearAndIssue(publicationDate.getFullYear(), issueNumber);
-  const volume = String(volumeIssue.volumeNumber);
-  const issueNo = String(issueNumber);
 
   const issue: JournalIssue = {
     id: randomUUID(),

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { apiErrorMessage, caughtErrorMessage } from "@/lib/userMessage";
 
 type SubmitState = "idle" | "submitting" | "success" | "error";
 
@@ -61,7 +62,7 @@ export default function ContactUsForm() {
       const result = (await response.json()) as { error?: string; ok?: boolean };
 
       if (!response.ok || !result.ok) {
-        throw new Error(result.error ?? "Could not send your message.");
+        throw new Error(apiErrorMessage(result.error, "Could not send your message."));
       }
 
       form.reset();
@@ -69,9 +70,7 @@ export default function ContactUsForm() {
       setMessage("Thank you. Your message has been sent successfully.");
     } catch (error) {
       setState("error");
-      setMessage(
-        error instanceof Error ? error.message : "Could not send your message.",
-      );
+      setMessage(caughtErrorMessage(error, "Could not send your message."));
     }
   }
 

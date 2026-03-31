@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { apiErrorMessage, caughtErrorMessage } from "@/lib/userMessage";
 
 type Props = {
   issueId: string;
@@ -28,7 +29,7 @@ export default function IssueEntrySubmissionForm({ issueId }: Props) {
       });
       const data = (await response.json()) as { ok?: boolean; error?: string };
       if (!response.ok || !data.ok) {
-        throw new Error(data.error ?? "Unable to submit issue entry.");
+        throw new Error(apiErrorMessage(data.error, "Unable to submit issue entry."));
       }
 
       form.reset();
@@ -38,11 +39,7 @@ export default function IssueEntrySubmissionForm({ issueId }: Props) {
       );
     } catch (submitError) {
       setState("error");
-      setMessage(
-        submitError instanceof Error
-          ? submitError.message
-          : "Unable to submit issue entry.",
-      );
+      setMessage(caughtErrorMessage(submitError, "Unable to submit issue entry."));
     }
   }
 

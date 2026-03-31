@@ -1,5 +1,5 @@
-import Image from "next/image";
 import { notFound } from "next/navigation";
+import BoardMembersList from "@/components/BoardMembersList";
 import ContactUsForm from "@/components/ContactUsForm";
 import ArchiveIssuesClient from "@/components/ArchiveIssuesClient";
 import SubmitManuscriptForm from "@/components/SubmitManuscriptForm";
@@ -7,13 +7,11 @@ import JournalShell from "@/components/JournalShell";
 import { listApprovedIssueEntriesForIssue } from "@/lib/issueEntrySubmissionStore";
 import { getArchiveIssues, getCurrentIssue, listIssues } from "@/lib/issueStore";
 import { listManuscripts } from "@/lib/manuscriptStore";
-import { getVolumeIssueByYearAndIssue, getVolumeIssueDetails } from "@/lib/volumeIssue";
+import { getStoredIssueDisplayLabels } from "@/lib/volumeIssue";
 import archiveDummyData from "@/data/archiveDummyData.json";
-import drSanikaImage from "../../../../Asset/Board_Members/Dr. Sanika Goregaonkar.jpg";
-import drVilasImage from "../../../../Asset/Board_Members/Dr. Vilas Jadhav.png";
-import profSheetalImage from "../../../../Asset/Board_Members/Prof. Sheetal More.jpg";
-import profSuneeraImage from "../../../../Asset/Board_Members/Prof. Suneera Kasliwal.jpg";
-import ptVidyadharImage from "../../../../Asset/Board_Members/Pt. Vidyadhar Vyas.jpg";
+
+/** Always read current issue / KV on each request (avoids stale prerendered “static” volume lines). */
+export const dynamic = "force-dynamic";
 
 type JournalSubPageProps = {
   params: Promise<{ slug: string }>;
@@ -35,49 +33,30 @@ async function renderMenuPage(slug: string) {
       <>
         <section className="about-page-wrap">
           <h2 className="menu-page-title">About</h2>
-          <div className="about-intro-card">
+          <article className="about-content-card">
             <p>
-              It is with great pride that we introduce Atulyaswar – A peer reviewed,
-              Indian Music Journal dedicated to the research in Indian Classical
-              Music.
+              It is with great pride that we introduce Atulyaswar, a dedicated
+              platform for scholarship in Indian Classical Music.
             </p>
-          </div>
-
-          <div className="about-content-grid">
-            <article className="about-content-card">
-              <p>
-                The world of Indian Classical Music is an intricate tapestry of sound,
-                spirituality, and mathematics. For centuries, this art form has
-                flourished through the Guru-Shishya Parampara, an oral tradition that
-                has preserved the sanctity of the Swar and Laya.
-              </p>
-              <p>
-                However, as we navigate the digital age, the need for a centralized,
-                scholarly, and accessible platform for intellectual discussion has
-                never been more pressing. This journal serves as a bridge between the
-                practitioner and the theorist.
-              </p>
-              <p>
-                By operating as an open-access platform, we ensure that knowledge is
-                not confined to the ivory towers of academia but is freely available
-                to musicians, students, and enthusiasts worldwide. The journal will
-                publish two issues per year.
-              </p>
-            </article>
-
-            <aside className="about-highlight-card">
-              <h3>Our Vision</h3>
-              <p>
-                Through peer-reviewed research papers, we aim to document the
-                &apos;living&apos; nature of our music.
-              </p>
-              <p>
-                We invite scholars and performers alike to submit their findings,
-                challenging old paradigms and suggesting new ways to perceive the
-                infinite possibilities within a single note.
-              </p>
-            </aside>
-          </div>
+            <p>
+              Rooted in the Guru-Shishya Parampara and adapted for the digital age,
+              this journal bridges practitioners and researchers through open access
+              knowledge.
+            </p>
+            <p>
+              We invite scholars and performers alike to explore, contribute, and
+              shape new perspectives in the evolving landscape of Indian music
+              research.
+            </p>
+            <p>
+              Guided by a distinguished Editorial Board and Advisors, Atulyaswar is
+              enriched by the expertise of eminent scholars and artists who have
+              made significant contributions to Indian classical music and academia:
+            </p>
+            <div className="about-board-embedded">
+              <BoardMembersList />
+            </div>
+          </article>
         </section>
       </>
     );
@@ -87,92 +66,7 @@ async function renderMenuPage(slug: string) {
     return (
       <>
         <h2 className="menu-page-title">Board Members</h2>
-        <div className="board-list">
-          <article className="board-item">
-            <div className="board-photo-wrap">
-              <Image
-                src={ptVidyadharImage}
-                alt="Pt. Vidyadhar Vyas"
-                className="board-photo"
-              />
-            </div>
-            <h3>Pt. Vidyadhar Vyas</h3>
-            <p className="board-role">Editorial Advisor</p>
-            <p className="board-specialization">Senior Vocalist – Gwalior Gharana</p>
-            <ul className="board-meta">
-              <li>Ex. Vice Chancellor - Bhatkhande Music Institute, Lucknow</li>
-              <li>Ex. Executive Director – ITC Sangeet Research Academy, Kolkata</li>
-            </ul>
-          </article>
-
-          <article className="board-item">
-            <div className="board-photo-wrap">
-              <Image
-                src={profSuneeraImage}
-                alt="Prof. Suneera Kasliwal"
-                className="board-photo"
-              />
-            </div>
-            <h3>Prof. Suneera Kasliwal</h3>
-            <p className="board-role">Editorial Advisor</p>
-            <p className="board-specialization">Senior Artist (Sitar)</p>
-            <ul className="board-meta">
-              <li>Ex. Dean and Ex. Head, Department of Music, University of Delhi</li>
-            </ul>
-          </article>
-
-          <article className="board-item">
-            <div className="board-photo-wrap">
-              <Image
-                src={profSheetalImage}
-                alt="Prof. Sheetal More"
-                className="board-photo"
-              />
-            </div>
-            <h3>Prof. Sheetal More</h3>
-            <p className="board-role">Member Editorial Board</p>
-            <p className="board-specialization">Senior Academician</p>
-            <ul className="board-meta">
-              <li>Head, Department of Music, SNDT Women&apos;s University, Pune</li>
-            </ul>
-          </article>
-
-          <article className="board-item">
-            <div className="board-photo-wrap">
-              <Image
-                src={drVilasImage}
-                alt="Dr. Vilas Jadhav"
-                className="board-photo board-photo-contain"
-              />
-            </div>
-            <h3>Dr. Vilas Jadhav</h3>
-            <p className="board-role">Member Editorial Board</p>
-            <ul className="board-meta">
-              <li>
-                Deputy Librarian, BMK Knowledge Resource Centre (Pune Branch),
-                SNDT Women&apos;s University, Pune
-              </li>
-              <li>Atulyaswar Publication</li>
-              <li>Pune</li>
-            </ul>
-          </article>
-
-          <article className="board-item">
-            <div className="board-photo-wrap">
-              <Image
-                src={drSanikaImage}
-                alt="Dr. Sanika Goregaonkar"
-                className="board-photo"
-              />
-            </div>
-            <h3>Dr. Sanika Goregaonkar</h3>
-            <p className="board-role">Editor-in-chief, Managing Director</p>
-            <p className="board-specialization">Vocalist – Gwalior Gharana</p>
-            <ul className="board-meta">
-              <li>Assistant Professor, SNDT Women&apos;s University, Pune</li>
-            </ul>
-          </article>
-        </div>
+        <BoardMembersList />
       </>
     );
   }
@@ -182,17 +76,14 @@ async function renderMenuPage(slug: string) {
     const approvedEntries = currentIssue
       ? await listApprovedIssueEntriesForIssue(currentIssue.id)
       : [];
-    const fallbackVolumeIssue = getVolumeIssueDetails(new Date());
-    const issueFromData = Number(currentIssue?.issueNo);
-    const issueNumber: 1 | 2 = issueFromData === 2 ? 2 : 1;
-    const yearFromData = Number(currentIssue?.year);
-    const issueYear = Number.isFinite(yearFromData) ? yearFromData : fallbackVolumeIssue.year;
-    const volumeIssue = getVolumeIssueByYearAndIssue(issueYear, issueNumber);
+    const issueLabels = currentIssue
+      ? getStoredIssueDisplayLabels(currentIssue)
+      : null;
 
     return (
       <>
         <h2 className="menu-page-title">Current Issue</h2>
-        {currentIssue ? (
+        {currentIssue && issueLabels ? (
           <>
             <p className="issue-title-row">
               <strong>Atulyaswar</strong>
@@ -200,14 +91,14 @@ async function renderMenuPage(slug: string) {
               <span>A peer reviewed, Indian Music Journal</span>
             </p>
             <p>
-              <strong>{volumeIssue.headerLabel}</strong>
+              <strong>{issueLabels.headerLabel}</strong>
             </p>
             <p>
-              <strong>Publication Window:</strong> {volumeIssue.periodLabel}
+              <strong>Publication Window:</strong> {issueLabels.periodLabel}
             </p>
             <p>
-              <strong>Volume No.</strong> {volumeIssue.volumeNumber} | <strong>Issue No.</strong>{" "}
-              {volumeIssue.issueNumber}
+              <strong>Volume No.</strong> {issueLabels.volumeLabel} | <strong>Issue No.</strong>{" "}
+              {issueLabels.issueNoLabel}
             </p>
             <p>
               <strong>Title:</strong> {currentIssue.title}
@@ -240,14 +131,18 @@ async function renderMenuPage(slug: string) {
                         <td>{entry.author}</td>
                         <td>{entry.pageNo}</td>
                         <td>
-                          <a
-                            href={entry.readUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-link"
-                          >
-                            Read
-                          </a>
+                          {entry.readUrl ? (
+                            <a
+                              href={entry.readUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-link"
+                            >
+                              Read
+                            </a>
+                          ) : (
+                            <span>Unavailable</span>
+                          )}
                         </td>
                       </tr>
                     ))
