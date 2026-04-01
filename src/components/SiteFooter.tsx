@@ -125,7 +125,7 @@ export default function SiteFooter() {
             &copy; {new Date().getFullYear()} {t.publication}. {t.rights}
           </p>
           <div className="footer-bottom-right">
-            <p className="footer-copy">{t.designed}</p>
+            <p className="footer-copy">Designed By Softlance Labs</p>
           </div>
         </div>
       </div>
