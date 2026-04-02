@@ -10,30 +10,52 @@ export default function HomePage() {
         <section className="cover-main-card">
           <div className="cover-main-card-content">
             <div className="cover-cta-row">
-              <Link href="/journal" className="entry-button cover-pill-button">
+              <Link
+                href="/journal"
+                className="entry-button cover-pill-button cover-pill-desktop-only"
+              >
                 Open Journal
               </Link>
-              <div className="cover-center-image-card" aria-hidden="true">
-                <Image
-                  src={backgroundImage}
-                  alt=""
-                  fill
-                  className="cover-center-image"
-                  priority
-                />
-                <div className="cover-center-image-overlay">
+              <div className="cover-center-image-card">
+                <div className="cover-center-image-media">
                   <Image
-                    src={logoImage}
-                    alt="Atulyaswar logo"
-                    className="cover-logo-image"
+                    src={backgroundImage}
+                    alt=""
+                    fill
+                    className="cover-center-image"
                     priority
                   />
-                  <p className="cover-journal-tagline">
-                    A Peer Reviewed, Indian Music Research Journal
-                  </p>
+                  <div className="cover-center-image-overlay">
+                    <Image
+                      src={logoImage}
+                      alt="Atulyaswar logo"
+                      className="cover-logo-image"
+                      priority
+                    />
+                    <p className="cover-journal-tagline">
+                      A Peer Reviewed, Indian Music Research Journal
+                    </p>
+                  </div>
+                </div>
+                <div className="cover-card-mobile-cta">
+                  <Link
+                    href="/journal"
+                    className="entry-button cover-pill-button cover-pill-in-card"
+                  >
+                    Open Journal
+                  </Link>
+                  <Link
+                    href="/editor"
+                    className="entry-button cover-pill-button cover-pill-in-card"
+                  >
+                    Open Editor
+                  </Link>
                 </div>
               </div>
-              <Link href="/editor" className="entry-button cover-pill-button">
+              <Link
+                href="/editor"
+                className="entry-button cover-pill-button cover-pill-desktop-only"
+              >
                 Open Editor
               </Link>
             </div>

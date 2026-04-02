@@ -112,12 +112,12 @@ export default function SiteFooter() {
           <div className="footer-inline-row">
             <Link href="/journal/open-access-policy" className="footer-policy-link">
               {t.policy}
-            </Link>
+              </Link>
             <span className="footer-inline-divider">|</span>
             <span className="footer-inline-item">Email: atulyaswarpublication@gmail.com</span>
             <span className="footer-inline-divider">|</span>
             <span className="footer-inline-item">Phone No: +91 9765556976</span>
-          </div>
+            </div>
         </div>
 
         <div className="footer-bottom">
