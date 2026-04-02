@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { apiErrorMessage, caughtErrorMessage } from "@/lib/userMessage";
 
 type SubmitState = "idle" | "submitting" | "success" | "error";
@@ -56,7 +56,23 @@ export default function SubmitManuscriptForm() {
 
   const designationValue = useMemo(() => selected.join(", "), [selected]);
 
+  useEffect(() => {
+    if (state !== "success") return;
+    const timer = window.setTimeout(() => {
+      setState("idle");
+      setMessage("");
+    }, 3500);
+    return () => window.clearTimeout(timer);
+  }, [state]);
+
+  function clearStatusMessage() {
+    if (state === "idle") return;
+    setState("idle");
+    setMessage("");
+  }
+
   function toggleDesignation(value: string) {
+    clearStatusMessage();
     setSelected((prev) =>
       prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value],
     );
@@ -64,12 +80,14 @@ export default function SubmitManuscriptForm() {
   }
 
   function handlePaperFileChange(event: ChangeEvent<HTMLInputElement>) {
+    clearStatusMessage();
     const selectedFile = event.target.files?.[0];
     setPaperFileName(selectedFile?.name ?? "");
     setFieldErrors((prev) => ({ ...prev, paperFile: "" }));
   }
 
   function handlePlagiarismFileChange(event: ChangeEvent<HTMLInputElement>) {
+    clearStatusMessage();
     const selectedFile = event.target.files?.[0];
     setPlagiarismFileName(selectedFile?.name ?? "");
     setFieldErrors((prev) => ({ ...prev, plagiarismFile: "" }));
@@ -191,7 +209,10 @@ export default function SubmitManuscriptForm() {
             name="authorNames"
             className="subscribe-input"
             required
-            onChange={() => setFieldErrors((prev) => ({ ...prev, authorNames: "" }))}
+            onChange={() => {
+              clearStatusMessage();
+              setFieldErrors((prev) => ({ ...prev, authorNames: "" }));
+            }}
           />
           {fieldErrors.authorNames && <span className="field-error-text">{fieldErrors.authorNames}</span>}
         </label>
@@ -203,7 +224,10 @@ export default function SubmitManuscriptForm() {
             name="title"
             className="subscribe-input"
             required
-            onChange={() => setFieldErrors((prev) => ({ ...prev, title: "" }))}
+            onChange={() => {
+              clearStatusMessage();
+              setFieldErrors((prev) => ({ ...prev, title: "" }));
+            }}
           />
           {fieldErrors.title && <span className="field-error-text">{fieldErrors.title}</span>}
         </label>
@@ -234,7 +258,10 @@ export default function SubmitManuscriptForm() {
             name="email"
             className="subscribe-input"
             required
-            onChange={() => setFieldErrors((prev) => ({ ...prev, email: "" }))}
+            onChange={() => {
+              clearStatusMessage();
+              setFieldErrors((prev) => ({ ...prev, email: "" }));
+            }}
           />
           {fieldErrors.email && <span className="field-error-text">{fieldErrors.email}</span>}
         </label>
@@ -246,7 +273,10 @@ export default function SubmitManuscriptForm() {
             className="subscribe-input"
             placeholder="+91 9765556076"
             required
-            onChange={() => setFieldErrors((prev) => ({ ...prev, phone: "" }))}
+            onChange={() => {
+              clearStatusMessage();
+              setFieldErrors((prev) => ({ ...prev, phone: "" }));
+            }}
           />
           {fieldErrors.phone && <span className="field-error-text">{fieldErrors.phone}</span>}
         </label>
@@ -257,7 +287,10 @@ export default function SubmitManuscriptForm() {
             className="subscribe-input form-textarea"
             placeholder="Full postal address with 6-digit pincode"
             required
-            onChange={() => setFieldErrors((prev) => ({ ...prev, address: "" }))}
+            onChange={() => {
+              clearStatusMessage();
+              setFieldErrors((prev) => ({ ...prev, address: "" }));
+            }}
           />
           {fieldErrors.address && <span className="field-error-text">{fieldErrors.address}</span>}
         </label>
@@ -307,7 +340,10 @@ export default function SubmitManuscriptForm() {
             name="accepted"
             value="true"
             required
-            onChange={() => setFieldErrors((prev) => ({ ...prev, accepted: "" }))}
+            onChange={() => {
+              clearStatusMessage();
+              setFieldErrors((prev) => ({ ...prev, accepted: "" }));
+            }}
           />
           {" "}
           I accept terms and conditions *
