@@ -53,7 +53,7 @@ export default function TopNavbar({ activePath }: TopNavbarProps) {
                 <BrandLogo subtitle="Atulyaswar Publication" compact />
               </Link>
               <div className="top-meta-issn" aria-label="ISSN information">
-                <p>ISSN - xxxx-xxxx</p>
+                {/* <p>ISSN - xxxx-xxxx</p> */}
               </div>
               <div className="double-navbar" aria-label="Main navigation">
                 <nav className="top-navbar top-navbar-primary-row" aria-label="Primary menu">

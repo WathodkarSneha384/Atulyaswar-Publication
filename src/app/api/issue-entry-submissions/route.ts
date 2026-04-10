@@ -6,6 +6,7 @@ import {
   createIssueEntrySubmission,
   listIssueEntrySubmissions,
 } from "@/lib/issueEntrySubmissionStore";
+import { resolveFromEmail } from "@/lib/resolveFromEmail";
 
 type CreatePayload = {
   issueId?: string;
@@ -40,8 +41,7 @@ async function sendIssueEntryEmail(input: {
   if (!apiKey || !toEmail) return;
 
   const resend = new Resend(apiKey);
-  const fromEmail =
-    process.env.CONTACT_FROM_EMAIL ?? "Atulyaswar Contact <onboarding@resend.dev>";
+  const fromEmail = resolveFromEmail(process.env.CONTACT_FROM_EMAIL);
 
   await resend.emails.send({
     from: fromEmail,

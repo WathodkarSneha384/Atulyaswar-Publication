@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { createManuscript, listManuscripts } from "@/lib/manuscriptStore";
 import { isAdminRequest } from "@/lib/adminAuth";
 import { saveManuscriptAttachments } from "@/lib/manuscriptFiles";
+import { resolveFromEmail } from "@/lib/resolveFromEmail";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const DOC_EXTENSIONS = [".doc", ".docx"];
@@ -71,10 +72,9 @@ async function sendSubmissionEmails(options: {
   const toEmail =
     process.env.MANUSCRIPT_TO_EMAIL ?? process.env.CONTACT_TO_EMAIL ?? ADMIN_SUBMISSION_EMAIL;
 
-  const fromEmail =
-    process.env.MANUSCRIPT_FROM_EMAIL ??
-    process.env.CONTACT_FROM_EMAIL ??
-    "Atulyaswar Contact <onboarding@resend.dev>";
+  const fromEmail = resolveFromEmail(
+    process.env.MANUSCRIPT_FROM_EMAIL ?? process.env.CONTACT_FROM_EMAIL,
+  );
   const resend = new Resend(apiKey);
 
   const paperBytes = Buffer.from(await options.paperFile.arrayBuffer());

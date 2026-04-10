@@ -116,7 +116,7 @@ export default function SiteFooter() {
             <span className="footer-inline-divider">|</span>
             <span className="footer-inline-item">Email: atulyaswarpublication@gmail.com</span>
             <span className="footer-inline-divider">|</span>
-            <span className="footer-inline-item">Phone No: +91 9765556976</span>
+            <span className="footer-inline-item">Phone No: +91 9765556076</span>
             </div>
         </div>
 

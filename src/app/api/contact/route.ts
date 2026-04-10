@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
+import { resolveFromEmail } from "@/lib/resolveFromEmail";
 
 type ContactPayload = {
   name?: string;
@@ -69,8 +70,7 @@ export async function POST(request: Request) {
   }
 
   const toEmail = process.env.CONTACT_TO_EMAIL;
-  const fromEmail =
-    process.env.CONTACT_FROM_EMAIL ?? "Atulyaswar Contact <onboarding@resend.dev>";
+  const fromEmail = resolveFromEmail(process.env.CONTACT_FROM_EMAIL);
 
   if (!toEmail) {
     return NextResponse.json(
