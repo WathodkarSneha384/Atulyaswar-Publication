@@ -1966,6 +1966,34 @@ a {
   white-space: nowrap;
 }
 
+.file-picker-remove {
+  margin-left: auto;
+  width: 24px;
+  height: 24px;
+  border: 1px solid #ddc9d8;
+  border-radius: 999px;
+  background: #fff;
+  color: #7d2c67;
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.file-picker-remove:hover {
+  border-color: #a12a82;
+  color: #a12a82;
+}
+
+.file-picker-hint {
+  color: #6f546a;
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
 .submit-form-grid .full-span {
   grid-column: 1 / -1;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { apiErrorMessage, caughtErrorMessage } from "@/lib/userMessage";
 
 type SubmitState = "idle" | "submitting" | "success" | "error";
@@ -53,6 +53,8 @@ export default function SubmitManuscriptForm() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [paperFileName, setPaperFileName] = useState("");
   const [plagiarismFileName, setPlagiarismFileName] = useState("");
+  const paperFileInputRef = useRef<HTMLInputElement | null>(null);
+  const plagiarismFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const designationValue = useMemo(() => selected.join(", "), [selected]);
 
@@ -82,14 +84,72 @@ export default function SubmitManuscriptForm() {
   function handlePaperFileChange(event: ChangeEvent<HTMLInputElement>) {
     clearStatusMessage();
     const selectedFile = event.target.files?.[0];
-    setPaperFileName(selectedFile?.name ?? "");
+    if (!selectedFile) {
+      setPaperFileName("");
+      setFieldErrors((prev) => ({ ...prev, paperFile: "" }));
+      return;
+    }
+
+    if (!hasAllowedDocExtension(selectedFile.name)) {
+      event.target.value = "";
+      setPaperFileName("");
+      setFieldErrors((prev) => ({ ...prev, paperFile: "Paper file must be DOC or DOCX." }));
+      return;
+    }
+
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      event.target.value = "";
+      setPaperFileName("");
+      setFieldErrors((prev) => ({ ...prev, paperFile: "Paper file size should not exceed 5 MB." }));
+      return;
+    }
+
+    setPaperFileName(selectedFile.name);
     setFieldErrors((prev) => ({ ...prev, paperFile: "" }));
   }
 
   function handlePlagiarismFileChange(event: ChangeEvent<HTMLInputElement>) {
     clearStatusMessage();
     const selectedFile = event.target.files?.[0];
-    setPlagiarismFileName(selectedFile?.name ?? "");
+    if (!selectedFile) {
+      setPlagiarismFileName("");
+      setFieldErrors((prev) => ({ ...prev, plagiarismFile: "" }));
+      return;
+    }
+
+    if (!isPdf(selectedFile.name)) {
+      event.target.value = "";
+      setPlagiarismFileName("");
+      setFieldErrors((prev) => ({ ...prev, plagiarismFile: "Plagiarism report must be a PDF file." }));
+      return;
+    }
+
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      event.target.value = "";
+      setPlagiarismFileName("");
+      setFieldErrors((prev) => ({ ...prev, plagiarismFile: "Plagiarism file size should not exceed 5 MB." }));
+      return;
+    }
+
+    setPlagiarismFileName(selectedFile.name);
+    setFieldErrors((prev) => ({ ...prev, plagiarismFile: "" }));
+  }
+
+  function clearPaperFile() {
+    clearStatusMessage();
+    if (paperFileInputRef.current) {
+      paperFileInputRef.current.value = "";
+    }
+    setPaperFileName("");
+    setFieldErrors((prev) => ({ ...prev, paperFile: "" }));
+  }
+
+  function clearPlagiarismFile() {
+    clearStatusMessage();
+    if (plagiarismFileInputRef.current) {
+      plagiarismFileInputRef.current.value = "";
+    }
+    setPlagiarismFileName("");
     setFieldErrors((prev) => ({ ...prev, plagiarismFile: "" }));
   }
 
@@ -300,6 +360,7 @@ export default function SubmitManuscriptForm() {
             id="paperFile"
             type="file"
             name="paperFile"
+            ref={paperFileInputRef}
             className="visually-hidden-file-input"
             accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             required
@@ -310,7 +371,22 @@ export default function SubmitManuscriptForm() {
             <span className="file-picker-name">
               {paperFileName || "No file selected"}
             </span>
+            {paperFileName ? (
+              <button
+                type="button"
+                className="file-picker-remove"
+                onClick={(event) => {
+                  event.preventDefault();
+                  clearPaperFile();
+                }}
+                aria-label="Remove paper file"
+                title="Remove file"
+              >
+                ×
+              </button>
+            ) : null}
           </label>
+          <span className="file-picker-hint">Allowed: .doc, .docx | Max size: 5 MB</span>
           {fieldErrors.paperFile && <span className="field-error-text">{fieldErrors.paperFile}</span>}
         </div>
         <div className="file-upload-field">
@@ -319,6 +395,7 @@ export default function SubmitManuscriptForm() {
             id="plagiarismFile"
             type="file"
             name="plagiarismFile"
+            ref={plagiarismFileInputRef}
             className="visually-hidden-file-input"
             accept=".pdf,application/pdf"
             required
@@ -329,7 +406,22 @@ export default function SubmitManuscriptForm() {
             <span className="file-picker-name">
               {plagiarismFileName || "No file selected"}
             </span>
+            {plagiarismFileName ? (
+              <button
+                type="button"
+                className="file-picker-remove"
+                onClick={(event) => {
+                  event.preventDefault();
+                  clearPlagiarismFile();
+                }}
+                aria-label="Remove plagiarism report file"
+                title="Remove file"
+              >
+                ×
+              </button>
+            ) : null}
           </label>
+          <span className="file-picker-hint">Allowed: .pdf | Max size: 5 MB</span>
           {fieldErrors.plagiarismFile && (
             <span className="field-error-text">{fieldErrors.plagiarismFile}</span>
           )}
