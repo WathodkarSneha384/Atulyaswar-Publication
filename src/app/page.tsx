@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import logoImage from "../../Asset/Logo1.png";
+import logoImage from "../../Asset/logo.png";
 import backgroundImage from "../../Asset/background_img.jpg";
 
 export default function HomePage() {
@@ -33,7 +33,9 @@ export default function HomePage() {
                       priority
                     />
                     <p className="cover-journal-tagline">
-                      A Peer Reviewed, Indian Music Research Journal
+                      A Peer Reviewed, Indian
+                      <br />
+                      Music Research Journal
                     </p>
                   </div>
                 </div>
