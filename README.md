@@ -46,7 +46,7 @@ Required env vars:
 
 - `MANUSCRIPT_TO_EMAIL` (fallbacks to `CONTACT_TO_EMAIL`)
 - `MANUSCRIPT_ADMIN_KEY` (required for admin review API)
-- `KV_REST_API_URL` and `KV_REST_API_TOKEN` (for persistent Vercel storage)
+- **Supabase (production persistence):** `SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_URL`) and `SUPABASE_SERVICE_ROLE_KEY` — see below
 
 When a manuscript is submitted:
 
@@ -64,8 +64,18 @@ Admin access flow:
 
 Storage behavior:
 
-- With KV env vars: submissions persist on Vercel.
-- Without KV env vars: local file fallback is used (`data/manuscripts.json`).
+- With Supabase configured: issues, manuscripts, and issue-entry submissions persist in Postgres (`atulyaswar_kv` table).
+- Without Supabase: local JSON files under `data/` are used (same as before).
+
+### Supabase setup
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. In **SQL Editor**, run `supabase/migrations/001_atulyaswar_kv.sql` (creates `atulyaswar_kv` with RLS enabled; no public policies — use the **service role** key only on the server).
+3. Add to `.env.local` (and Vercel):
+   - `SUPABASE_URL` — Project URL (or set `NEXT_PUBLIC_SUPABASE_URL` instead).
+   - `SUPABASE_SERVICE_ROLE_KEY` — **service_role** secret (never expose to the browser or client bundles).
+
+Document keys stored in `atulyaswar_kv.key` (same as the old Vercel KV keys): `atulyaswar:issues`, `atulyaswar:manuscripts`, `atulyaswar:issue-entry-submissions`. To migrate from Vercel KV, export each JSON array and `INSERT`/`upsert` into `atulyaswar_kv` with the matching `key`.
 
 ### Issue + Archive Workflow
 

@@ -1,7 +1,11 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { kv } from "@vercel/kv";
+import {
+  hasSupabaseConfig,
+  supabaseReadJson,
+  supabaseWriteJson,
+} from "@/lib/supabaseStore";
 
 export type ManuscriptStatus = "pending" | "approved" | "rejected";
 
@@ -35,15 +39,6 @@ const DATA_DIR = process.env.VERCEL
 const DATA_FILE = path.join(DATA_DIR, "manuscripts.json");
 const KV_KEY = "atulyaswar:manuscripts";
 
-function hasKvConfig() {
-  const rawUrl = process.env.KV_REST_API_URL ?? "";
-  const rawToken = process.env.KV_REST_API_TOKEN ?? "";
-  const url = rawUrl.trim();
-  const token = rawToken.trim();
-  const hasWhitespace = /\s/.test(rawUrl) || /\s/.test(rawToken);
-  return !hasWhitespace && url.startsWith("https://") && token.length > 0;
-}
-
 async function ensureDataFile() {
   await mkdir(DATA_DIR, { recursive: true });
   try {
@@ -54,13 +49,14 @@ async function ensureDataFile() {
 }
 
 async function readAll(): Promise<ManuscriptRecord[]> {
-  if (hasKvConfig()) {
+  if (hasSupabaseConfig()) {
     try {
-      const records = await kv.get<ManuscriptRecord[]>(KV_KEY);
+      const records = await supabaseReadJson<ManuscriptRecord[]>(KV_KEY);
+      if (records === null) return [];
       return Array.isArray(records) ? records : [];
     } catch (error) {
       console.error(
-        "[atulyaswar] KV read failed (manuscripts); falling back to local file.",
+        "[atulyaswar] Supabase read failed (manuscripts); falling back to local file.",
         error,
       );
     }
@@ -78,13 +74,13 @@ async function readAll(): Promise<ManuscriptRecord[]> {
 }
 
 async function writeAll(records: ManuscriptRecord[]) {
-  if (hasKvConfig()) {
+  if (hasSupabaseConfig()) {
     try {
-      await kv.set(KV_KEY, records);
+      await supabaseWriteJson(KV_KEY, records);
       return;
     } catch (error) {
       console.error(
-        "[atulyaswar] KV write failed (manuscripts); falling back to local file.",
+        "[atulyaswar] Supabase write failed (manuscripts); falling back to local file.",
         error,
       );
     }
