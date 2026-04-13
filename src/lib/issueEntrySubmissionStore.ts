@@ -43,6 +43,10 @@ type UpdateSubmissionInput = Partial<
   Omit<IssueEntrySubmission, "id" | "createdAt" | "status">
 >;
 
+function hasReadablePdf(item: Pick<IssueEntrySubmission, "pdfUrl" | "pdfBase64">) {
+  return Boolean(item.pdfUrl?.trim()) || Boolean(item.pdfBase64);
+}
+
 const DATA_DIR = process.env.VERCEL
   ? path.join("/tmp", "atulyaswar-data")
   : path.join(process.cwd(), "data");
@@ -188,10 +192,20 @@ export async function listApprovedIssueEntriesForIssue(issueId: string) {
     (item) =>
       item.issueId === issueId &&
       item.status === "approved" &&
-      item.publishStatus === "published",
+      item.publishStatus === "published" &&
+      hasReadablePdf(item),
   );
 
-  return approvedAndPublished.map<ApprovedIssueEntry>((item, index) => ({
+  const priorityPrefix = "atulyaswar -";
+  const prioritized = approvedAndPublished.filter((item) =>
+    item.title.trim().toLowerCase().startsWith(priorityPrefix),
+  );
+  const regular = approvedAndPublished.filter(
+    (item) => !item.title.trim().toLowerCase().startsWith(priorityPrefix),
+  );
+  const sortedEntries = [...prioritized, ...regular];
+
+  return sortedEntries.map<ApprovedIssueEntry>((item, index) => ({
     id: item.id,
     srNo: index + 1,
     title: item.title,
@@ -209,7 +223,8 @@ export async function publishApprovedIssueEntries(issueId: string) {
     if (
       item.issueId === issueId &&
       item.status === "approved" &&
-      item.publishStatus !== "published"
+      item.publishStatus !== "published" &&
+      hasReadablePdf(item)
     ) {
       updatedCount += 1;
       return {
@@ -240,7 +255,8 @@ export async function publishIssueEntrySubmissions(ids: string[]) {
     if (
       idSet.has(item.id) &&
       item.status === "approved" &&
-      item.publishStatus !== "published"
+      item.publishStatus !== "published" &&
+      hasReadablePdf(item)
     ) {
       updatedCount += 1;
       return {
