@@ -14,20 +14,6 @@ export default function HomePage() {
             role="img"
             aria-label="Atulyaswar. A Peer Reviewed Indian Music Research Journal"
           >
-            <defs>
-              <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#9f2b82" />
-                <stop offset="40%" stopColor="#c94bb3" />
-                <stop offset="70%" stopColor="#e063c3" />
-                <stop offset="100%" stopColor="#ff85e1" />
-              </linearGradient>
-              <linearGradient id="subtitleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#7f1f68" />
-                <stop offset="50%" stopColor="#b63c98" />
-                <stop offset="100%" stopColor="#de63ba" />
-              </linearGradient>
-            </defs>
-
             <text
               x="50%"
               y="70"
@@ -35,7 +21,7 @@ export default function HomePage() {
               fontFamily="Playfair Display, Cinzel, serif"
               fontSize="86"
               fontWeight="600"
-              fill="url(#textGradient)"
+              fill="#9f2b82"
               letterSpacing="1"
             >
               Atulyaswar
@@ -48,7 +34,7 @@ export default function HomePage() {
               fontFamily="Inter, sans-serif"
                 fontSize="32"
               fontWeight="600"
-              fill="url(#subtitleGradient)"
+              fill="#b97dad"
             >
                 <tspan x="50%" dy="0">
                   A Peer Reviewed Indian Music
@@ -62,12 +48,26 @@ export default function HomePage() {
             A peer-reviewed Indian music research platform for publishing and
             editing scholarly content on Indian music.
           </p>
-          <div className="split-home-actions">
-            <Link href="/journal" className="entry-button split-home-journal-btn">
-              Open Journal
+          <div className="split-home-entry-grid">
+            <Link href="/journal" className="split-home-entry-card split-home-entry-card-journal">
+              <span className="split-home-entry-top-icon" aria-hidden="true">📖</span>
+              <span className="split-home-entry-head">
+                <span className="split-home-entry-icon" aria-hidden="true">♫</span>
+                <span className="split-home-entry-title split-home-entry-title-journal">Open Journal</span>
+              </span>
+              <span className="split-home-entry-copy">
+                Explore research papers, articles, and publications.
+              </span>
             </Link>
-            <Link href="/editor" className="entry-button split-home-editor-btn">
-              Open Editor
+            <Link href="/editor" className="split-home-entry-card split-home-entry-card-editor">
+              <span className="split-home-entry-top-icon" aria-hidden="true">✍🏽</span>
+              <span className="split-home-entry-head">
+                <span className="split-home-entry-icon" aria-hidden="true">✎</span>
+                <span className="split-home-entry-title">Open Editor</span>
+              </span>
+              <span className="split-home-entry-copy">
+                Write, submit, and manage your scholarly content.
+              </span>
             </Link>
           </div>
         </div>
@@ -84,11 +84,25 @@ export default function HomePage() {
       </section>
 
       <div className="split-home-actions-mobile">
-        <Link href="/journal" className="entry-button split-home-journal-btn">
-          Open Journal
+        <Link href="/journal" className="split-home-entry-card split-home-entry-card-journal">
+          <span className="split-home-entry-top-icon" aria-hidden="true">📖</span>
+          <span className="split-home-entry-head">
+            <span className="split-home-entry-icon" aria-hidden="true">♫</span>
+            <span className="split-home-entry-title split-home-entry-title-journal">Open Journal</span>
+          </span>
+          <span className="split-home-entry-copy">
+            Explore research papers, articles, and publications.
+          </span>
         </Link>
-        <Link href="/editor" className="entry-button split-home-editor-btn">
-          Open Editor
+        <Link href="/editor" className="split-home-entry-card split-home-entry-card-editor">
+          <span className="split-home-entry-top-icon" aria-hidden="true">✍🏽</span>
+          <span className="split-home-entry-head">
+            <span className="split-home-entry-icon" aria-hidden="true">✎</span>
+            <span className="split-home-entry-title">Open Editor</span>
+          </span>
+          <span className="split-home-entry-copy">
+            Write, submit, and manage your scholarly content.
+          </span>
         </Link>
       </div>
     </main>

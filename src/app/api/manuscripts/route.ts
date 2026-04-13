@@ -72,9 +72,9 @@ async function sendSubmissionEmails(options: {
   const toEmail =
     process.env.MANUSCRIPT_TO_EMAIL ?? process.env.CONTACT_TO_EMAIL ?? ADMIN_SUBMISSION_EMAIL;
 
-  const fromEmail = resolveFromEmail(
-    process.env.MANUSCRIPT_FROM_EMAIL ?? process.env.CONTACT_FROM_EMAIL,
-  );
+  // Use verified contact sender for manuscript emails as well.
+  // This avoids malformed/unverified MANUSCRIPT_FROM_EMAIL values causing Resend rejections.
+  const fromEmail = resolveFromEmail(process.env.CONTACT_FROM_EMAIL);
   const resend = new Resend(apiKey);
 
   const paperBytes = Buffer.from(await options.paperFile.arrayBuffer());

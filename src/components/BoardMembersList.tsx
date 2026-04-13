@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { StaticImageData } from "next/image";
 import drSanikaImage from "../../Asset/Board_Members/Dr. Sanika Goregaonkar.jpg";
 import drVilasImage from "../../Asset/Board_Members/Dr. Vilas Jadhav.png";
+import mrAtulKahateImage from "../../Asset/Board_Members/Mr. Atul Kahate.jpeg";
 import profSheetalImage from "../../Asset/Board_Members/Prof. Sheetal More.jpg";
 import profSuneeraImage from "../../Asset/Board_Members/Prof. Suneera Kasliwal.jpg";
 import ptVidyadharImage from "../../Asset/Board_Members/Pt. Vidyadhar Vyas.jpg";
@@ -62,6 +63,12 @@ const boardMembers: BoardMember[] = [
       "Vocalist - Gwalior Gharana",
       "Assistant Professor, SNDT Women's University, Pune",
     ],
+  },
+  {
+    name: "Mr. Atul Kahate",
+    role: "Member Editorial Board",
+    image: mrAtulKahateImage,
+    details: ["Software Professional,", "Writer, Trainer"],
   },
 ];
 
