@@ -19,10 +19,10 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: "Atulyaswar | Music Journal and Notation Editor",
   description:
-    "Atulyaswar website with two products: A peer reviewed music research journal and an upcoming notation editor.",
+    "Atulyaswar website with two products: A peer reviewed music journal and an upcoming notation editor.",
   keywords: [
     "Atulyaswar",
-    "music research journal",
+    "music journal",
     "peer reviewed journal",
     "notation editor",
     "open access policy",

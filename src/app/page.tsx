@@ -12,7 +12,7 @@ export default function HomePage() {
             viewBox="0 0 600 190"
             xmlns="http://www.w3.org/2000/svg"
             role="img"
-            aria-label="Atulyaswar. A Peer Reviewed Indian Music Research Journal"
+            aria-label="Atulyaswar. A Peer Reviewed, Indian Music Journal"
           >
             <text
               x="50%"
@@ -37,17 +37,13 @@ export default function HomePage() {
               fill="#b97dad"
             >
                 <tspan x="50%" dy="0">
-                  A Peer Reviewed Indian Music
+                  A Peer Reviewed,
                 </tspan>
                 <tspan x="50%" dy="36">
-                  Research Journal
+                  Indian Music Journal
                 </tspan>
             </text>
           </svg>
-          <p className="split-home-description">
-            A peer-reviewed Indian music research platform for publishing and
-            editing scholarly content on Indian music.
-          </p>
           <div className="split-home-entry-grid">
             <Link href="/journal" className="split-home-entry-card split-home-entry-card-journal">
               <span className="split-home-entry-top-icon" aria-hidden="true">📖</span>
@@ -55,18 +51,12 @@ export default function HomePage() {
                 <span className="split-home-entry-icon" aria-hidden="true">♫</span>
                 <span className="split-home-entry-title split-home-entry-title-journal">Open Journal</span>
               </span>
-              <span className="split-home-entry-copy">
-                Explore research papers, articles, and publications.
-              </span>
             </Link>
             <Link href="/editor" className="split-home-entry-card split-home-entry-card-editor">
               <span className="split-home-entry-top-icon" aria-hidden="true">✍🏽</span>
               <span className="split-home-entry-head">
                 <span className="split-home-entry-icon" aria-hidden="true">✎</span>
                 <span className="split-home-entry-title">Open Editor</span>
-              </span>
-              <span className="split-home-entry-copy">
-                Write, submit, and manage your scholarly content.
               </span>
             </Link>
           </div>
@@ -90,18 +80,12 @@ export default function HomePage() {
             <span className="split-home-entry-icon" aria-hidden="true">♫</span>
             <span className="split-home-entry-title split-home-entry-title-journal">Open Journal</span>
           </span>
-          <span className="split-home-entry-copy">
-            Explore research papers, articles, and publications.
-          </span>
         </Link>
         <Link href="/editor" className="split-home-entry-card split-home-entry-card-editor">
           <span className="split-home-entry-top-icon" aria-hidden="true">✍🏽</span>
           <span className="split-home-entry-head">
             <span className="split-home-entry-icon" aria-hidden="true">✎</span>
             <span className="split-home-entry-title">Open Editor</span>
-          </span>
-          <span className="split-home-entry-copy">
-            Write, submit, and manage your scholarly content.
           </span>
         </Link>
       </div>

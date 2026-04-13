@@ -50,6 +50,7 @@ body {
   margin: 0 auto;
   display: grid;
   grid-template-columns: minmax(320px, 1fr) minmax(460px, 1.35fr);
+  min-height: min(94dvh, 980px);
   background: rgba(255, 255, 255, 0.75);
   border: 1px solid rgba(214, 194, 209, 0.8);
   border-radius: 14px;
@@ -103,11 +104,11 @@ body {
   border: 1px solid #e7dbe3;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.94);
-  padding: 0.95rem 0.95rem 0.9rem;
+  padding: 0.65rem 0.8rem;
   display: grid;
-  gap: 0.34rem;
+  gap: 0.2rem;
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
-  min-height: 182px;
+  min-height: 118px;
   align-content: start;
   min-width: 0;
 }
@@ -122,14 +123,16 @@ body {
   display: inline-flex;
   justify-self: center;
   align-self: center;
-  font-size: 2.1rem;
-  line-height: 1;
+  font-size: 1.45rem;
+  line-height: 2;
 }
 
 .split-home-entry-head {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
+  width: 100%;
   min-width: 0;
 }
 
@@ -182,6 +185,9 @@ body {
   position: relative;
   min-height: clamp(340px, 78dvh, 900px);
   min-width: 0;
+  border-top-right-radius: 20px;
+  border-bottom-right-radius: 20px;
+  overflow: hidden;
 }
 
 .split-home-image {
@@ -253,7 +259,7 @@ body {
 
   .split-home-actions-mobile .split-home-entry-card {
     width: 100%;
-    min-height: 154px;
+    min-height: 110px;
     justify-items: center;
     text-align: center;
   }
@@ -299,7 +305,7 @@ body {
   }
 
   .split-home-actions-mobile .split-home-entry-card {
-    min-height: 142px;
+    min-height: 102px;
     justify-items: center;
     text-align: center;
   }

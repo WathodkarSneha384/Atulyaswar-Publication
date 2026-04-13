@@ -28,6 +28,17 @@ export default async function JournalSubPage({ params }: JournalSubPageProps) {
 }
 
 async function renderMenuPage(slug: string) {
+  const formatCurrentIssueHeader = (title: string) => {
+    const normalized = title.trim();
+    if (!normalized) return "Atulyaswar";
+
+    const parts = normalized.split(/\s*[-–—]\s*/).filter(Boolean);
+    if (parts.length > 1) {
+      return `Atulyaswar - ${parts.slice(1).join(" - ")}`;
+    }
+    return `Atulyaswar - ${normalized}`;
+  };
+
   if (slug === "about") {
     return (
       <>
@@ -86,9 +97,7 @@ async function renderMenuPage(slug: string) {
         {currentIssue && issueLabels ? (
           <>
             <p className="issue-title-row">
-              <strong>Atulyaswar</strong>
-              <span aria-hidden="true"> | </span>
-              <span>A peer reviewed, Indian Music Journal</span>
+              <strong>{formatCurrentIssueHeader(currentIssue.title)}</strong>
             </p>
             <p>
               <strong>{issueLabels.headerLabel}</strong>

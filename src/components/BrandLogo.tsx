@@ -17,7 +17,7 @@ export default function BrandLogo({
           viewBox="0 0 600 190"
           xmlns="http://www.w3.org/2000/svg"
           role="img"
-          aria-label="Atulyaswar. A Peer Reviewed Indian Music Research Journal"
+          aria-label="Atulyaswar. A Peer Reviewed, Indian Music Journal"
         >
           <text
             x="50%"
@@ -42,10 +42,10 @@ export default function BrandLogo({
             fill="#b97dad"
           >
             <tspan x="50%" dy="0">
-              A Peer Reviewed Indian Music
+              A Peer Reviewed,
             </tspan>
             <tspan x="50%" dy="36">
-              Research Journal
+                Indian Music Journal
             </tspan>
           </text>
         </svg>
