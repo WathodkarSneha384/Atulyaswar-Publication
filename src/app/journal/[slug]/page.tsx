@@ -80,6 +80,9 @@ async function renderMenuPage(slug: string) {
       ? getStoredIssueDisplayLabels(currentIssue)
       : null;
 
+    const adminVolumeValue = currentIssue?.volume?.trim() || issueLabels?.volumeLabel || "";
+    const adminIssueNoValue = currentIssue?.issueNo?.trim() || issueLabels?.issueNoLabel || "";
+
     return (
       <>
         <h2 className="menu-page-title">Current Issue</h2>
@@ -98,7 +101,7 @@ async function renderMenuPage(slug: string) {
               {currentIssue.publicationWindow?.trim() || issueLabels.periodLabel}
             </p>
             <p>
-              <strong>{currentIssue.volumeDisplay?.trim() || issueLabels.headerLabel}</strong>
+              <strong>Volume {adminVolumeValue} | Issue No {adminIssueNoValue}</strong>
             </p>
             <div className="issue-table-wrap">
               <table className="issue-table">
