@@ -175,6 +175,7 @@ export default function AdminDashboard() {
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog | null>(null);
   const [selectedSubmissionIds, setSelectedSubmissionIds] = useState<string[]>([]);
+  const [isCreateIssueModalOpen, setIsCreateIssueModalOpen] = useState(false);
   const pendingEditFormDataRef = useRef<FormData | null>(null);
 
   const [newIssue, setNewIssue] = useState({
@@ -543,6 +544,7 @@ export default function AdminDashboard() {
       return;
     }
     setNewIssue({ title: "", publicationWindow: "", volumeDisplay: "" });
+    setIsCreateIssueModalOpen(false);
     setSuccess("Issue created. Previous current issue moved to archive.");
     await loadCurrentTabData("issues");
   }
@@ -807,32 +809,15 @@ export default function AdminDashboard() {
 
         <div className="admin-content">
           {activeTab === "issues" && (
-            <form className="issue-create-inline" onSubmit={createIssue}>
-              <input
-                className="subscribe-input"
-                placeholder="Title (optional)"
-                value={newIssue.title}
-                onChange={(e) => setNewIssue((p) => ({ ...p, title: e.target.value }))}
-              />
-              <input
-                className="subscribe-input"
-                placeholder="Publication Window (e.g., January-June)"
-                value={newIssue.publicationWindow}
-                onChange={(e) =>
-                  setNewIssue((p) => ({ ...p, publicationWindow: e.target.value }))}
-              />
-              <input
-                className="subscribe-input"
-                placeholder="Volume line (e.g., Volume 14, Issue 2 (January 2026))"
-                value={newIssue.volumeDisplay}
-                onChange={(e) => setNewIssue((p) => ({ ...p, volumeDisplay: e.target.value }))}
-              />
-              <p className="admin-auto-issue-note">
-                Volume/Issue follow a July–June volume year: Issue 1 (Jul–Dec) and Issue 2
-                (Jan–Jun) share the same volume; the create date sets which half you are opening.
-              </p>
-              <button type="submit" className="subscribe-button">Create Issue</button>
-            </form>
+            <div className="admin-toolbar admin-toolbar-right">
+              <button
+                type="button"
+                className="subscribe-button"
+                onClick={() => setIsCreateIssueModalOpen(true)}
+              >
+                Create Issue
+              </button>
+            </div>
           )}
           {activeTab === "entrySubmissions" && (
             <div className="admin-toolbar admin-toolbar-right">
@@ -1028,6 +1013,68 @@ export default function AdminDashboard() {
                 <div className="admin-toolbar">
                   <button type="submit" className="subscribe-button">Save</button>
                   <button type="button" className="ghost-admin-btn" onClick={() => setEditData(null)}>
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {activeTab === "issues" && isCreateIssueModalOpen && (
+            <div className="admin-edit-backdrop" role="dialog" aria-modal="true">
+              <form className="admin-edit-modal" onSubmit={createIssue}>
+                <div className="admin-edit-head">
+                  <h3>Create Issue</h3>
+                  <button
+                    type="button"
+                    className="ghost-admin-btn"
+                    onClick={() => setIsCreateIssueModalOpen(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+                <div className="admin-edit-grid">
+                  <label className="admin-edit-field admin-edit-field-full">
+                    Title (optional)
+                    <input
+                      className="subscribe-input"
+                      placeholder="Title (optional)"
+                      value={newIssue.title}
+                      onChange={(e) => setNewIssue((p) => ({ ...p, title: e.target.value }))}
+                    />
+                  </label>
+                  <label className="admin-edit-field admin-edit-field-full">
+                    Publication Window
+                    <input
+                      className="subscribe-input"
+                      placeholder="e.g., January-June"
+                      value={newIssue.publicationWindow}
+                      onChange={(e) =>
+                        setNewIssue((p) => ({ ...p, publicationWindow: e.target.value }))}
+                    />
+                  </label>
+                  <label className="admin-edit-field admin-edit-field-full">
+                    Volume Line
+                    <input
+                      className="subscribe-input"
+                      placeholder="e.g., Volume 14, Issue 2 (January 2026)"
+                      value={newIssue.volumeDisplay}
+                      onChange={(e) =>
+                        setNewIssue((p) => ({ ...p, volumeDisplay: e.target.value }))}
+                    />
+                  </label>
+                  <p className="admin-auto-issue-note admin-edit-field-full">
+                    Volume/Issue follow a July–June volume year: Issue 1 (Jul-Dec) and Issue 2
+                    (Jan-Jun) share the same volume; the create date sets which half you are opening.
+                  </p>
+                </div>
+                <div className="admin-toolbar">
+                  <button type="submit" className="subscribe-button">Create</button>
+                  <button
+                    type="button"
+                    className="ghost-admin-btn"
+                    onClick={() => setIsCreateIssueModalOpen(false)}
+                  >
                     Cancel
                   </button>
                 </div>

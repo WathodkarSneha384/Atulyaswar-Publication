@@ -82,6 +82,8 @@ async function renderMenuPage(slug: string) {
 
     const adminVolumeValue = currentIssue?.volume?.trim() || issueLabels?.volumeLabel || "";
     const adminIssueNoValue = currentIssue?.issueNo?.trim() || issueLabels?.issueNoLabel || "";
+    const adminTitle = currentIssue?.title?.trim() || "";
+    const showAdminTitle = adminTitle.length > 0 && !/^issue\s*\d+/i.test(adminTitle);
 
     return (
       <>
@@ -91,9 +93,9 @@ async function renderMenuPage(slug: string) {
             <p className="issue-title-row">
               <strong>Atulyaswar</strong>
             </p>
-            {currentIssue.title.trim() ? (
+            {showAdminTitle ? (
               <p>
-                <strong>Title:</strong> {currentIssue.title}
+                <strong>Title:</strong> {adminTitle}
               </p>
             ) : null}
             <p>
