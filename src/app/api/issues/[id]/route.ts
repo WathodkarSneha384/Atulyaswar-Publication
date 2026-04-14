@@ -39,7 +39,15 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
   const { id } = await context.params;
-  const updated = await updateIssue(id, payload);
+  let updated = null;
+  try {
+    updated = await updateIssue(id, payload);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to update issue." },
+      { status: 400 },
+    );
+  }
   if (!updated) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }

@@ -7,7 +7,7 @@ import {
   supabaseWriteJson,
 } from "@/lib/supabaseStore";
 import {
-  getIssueFieldsFromPublicationDate,
+  getVolumeNumberForYear,
 } from "@/lib/volumeIssue";
 
 export type IssueStatus = "current" | "archive";
@@ -38,6 +38,7 @@ type NewIssueInput = {
   title?: string;
   publicationWindow?: string;
   volumeDisplay?: string;
+  issueNo?: "1" | "2";
   publicationDate?: Date;
 };
 
@@ -152,9 +153,22 @@ export async function createIssue(input: NewIssueInput) {
       : issue,
   );
 
-  const publicationDate = input.publicationDate ?? new Date();
-  const { year, volume, issueNo, issueNumber, volumeStartYear } =
-    getIssueFieldsFromPublicationDate(publicationDate);
+  const now = input.publicationDate ?? new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  const requestedIssueNo = input.issueNo === "1" || input.issueNo === "2" ? input.issueNo : "1";
+  const issueNumber: 1 | 2 = requestedIssueNo === "2" ? 2 : 1;
+
+  // Create issue against the next upcoming cycle (never backdated).
+  // Example: in April, Issue 1 => Jul-Dec current year, Issue 2 => Jan-Jun next year.
+  const displayYear =
+    issueNumber === 1
+      ? (currentMonth < 6 ? currentYear : currentYear + 1)
+      : currentYear + 1;
+  const volumeStartYear = issueNumber === 1 ? displayYear : displayYear - 1;
+  const year = String(displayYear);
+  const volume = String(getVolumeNumberForYear(volumeStartYear));
+  const issueNo = String(issueNumber);
 
   const issue: JournalIssue = {
     id: randomUUID(),
@@ -165,7 +179,7 @@ export async function createIssue(input: NewIssueInput) {
     publicationWindow: cleanPublicationWindow || undefined,
     volumeDisplay: cleanVolumeDisplay || undefined,
     status: "current",
-    createdAt: publicationDate.toISOString(),
+    createdAt: now.toISOString(),
     entries: [],
   };
 
@@ -210,6 +224,14 @@ export async function updateIssue(id: string, updates: UpdateIssueInput) {
   if (index === -1) return null;
 
   const current = all[index];
+  const currentYear = new Date().getFullYear();
+  const nextYearRaw = updates.year?.trim();
+  if (nextYearRaw) {
+    const nextYear = Number.parseInt(nextYearRaw, 10);
+    if (Number.isFinite(nextYear) && nextYear < currentYear) {
+      throw new Error(`Backdated issues are not allowed. Please use year ${currentYear} or later.`);
+    }
+  }
   const nextStatus = updates.status ?? current.status;
 
   if (nextStatus === "current") {

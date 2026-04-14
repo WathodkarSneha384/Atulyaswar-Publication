@@ -11,6 +11,7 @@ type CreateIssuePayload = {
   title?: string;
   publicationWindow?: string;
   volumeDisplay?: string;
+  issueNo?: "1" | "2";
 };
 
 export async function GET(request: Request) {
@@ -46,9 +47,10 @@ export async function POST(request: Request) {
   const title = (payload.title ?? "").trim();
   const publicationWindow = (payload.publicationWindow ?? "").trim();
   const volumeDisplay = (payload.volumeDisplay ?? "").trim();
+  const issueNo = payload.issueNo === "2" ? "2" : "1";
 
   try {
-    const issue = await createIssue({ title, publicationWindow, volumeDisplay });
+    const issue = await createIssue({ title, publicationWindow, volumeDisplay, issueNo });
     return NextResponse.json({ ok: true, item: issue });
   } catch (error) {
     return NextResponse.json(

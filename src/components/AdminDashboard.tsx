@@ -182,6 +182,7 @@ export default function AdminDashboard() {
     title: "",
     publicationWindow: "",
     volumeDisplay: "",
+    issueNo: "1" as "1" | "2",
   });
 
   const currentRows = useMemo(() => {
@@ -543,7 +544,7 @@ export default function AdminDashboard() {
       setError(apiErrorMessage(data.error, "Failed to create issue."));
       return;
     }
-    setNewIssue({ title: "", publicationWindow: "", volumeDisplay: "" });
+    setNewIssue({ title: "", publicationWindow: "", volumeDisplay: "", issueNo: "1" });
     setIsCreateIssueModalOpen(false);
     setSuccess("Issue created. Previous current issue moved to archive.");
     await loadCurrentTabData("issues");
@@ -1035,6 +1036,21 @@ export default function AdminDashboard() {
                 </div>
                 <div className="admin-edit-grid">
                   <label className="admin-edit-field admin-edit-field-full">
+                    Issue Period
+                    <select
+                      className="subscribe-input"
+                      value={newIssue.issueNo}
+                      onChange={(e) =>
+                        setNewIssue((p) => ({
+                          ...p,
+                          issueNo: e.target.value === "2" ? "2" : "1",
+                        }))}
+                    >
+                      <option value="1">Issue 1 (Jul-Dec)</option>
+                      <option value="2">Issue 2 (Jan-Jun)</option>
+                    </select>
+                  </label>
+                  <label className="admin-edit-field admin-edit-field-full">
                     Title (optional)
                     <input
                       className="subscribe-input"
@@ -1064,8 +1080,8 @@ export default function AdminDashboard() {
                     />
                   </label>
                   <p className="admin-auto-issue-note admin-edit-field-full">
-                    July-December is Issue 1 and January-June is Issue 2.
-                    Both belong to the same volume year (July-June).
+                    Creates the next upcoming cycle only. In Jan-Jun: Issue 1 maps to current year
+                    Jul-Dec, and Issue 2 maps to next year Jan-Jun.
                   </p>
                 </div>
                 <div className="admin-toolbar">
