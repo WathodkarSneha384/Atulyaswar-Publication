@@ -28,17 +28,6 @@ export default async function JournalSubPage({ params }: JournalSubPageProps) {
 }
 
 async function renderMenuPage(slug: string) {
-  const formatCurrentIssueHeader = (title: string) => {
-    const normalized = title.trim();
-    if (!normalized) return "Atulyaswar";
-
-    const parts = normalized.split(/\s*[-–—]\s*/).filter(Boolean);
-    if (parts.length > 1) {
-      return `Atulyaswar - ${parts.slice(1).join(" - ")}`;
-    }
-    return `Atulyaswar - ${normalized}`;
-  };
-
   if (slug === "about") {
     return (
       <>
@@ -97,20 +86,19 @@ async function renderMenuPage(slug: string) {
         {currentIssue && issueLabels ? (
           <>
             <p className="issue-title-row">
-              <strong>{formatCurrentIssueHeader(currentIssue.title)}</strong>
+              <strong>Atulyaswar</strong>
+            </p>
+            {currentIssue.title.trim() ? (
+              <p>
+                <strong>Title:</strong> {currentIssue.title}
+              </p>
+            ) : null}
+            <p>
+              <strong>Publication Window:</strong>{" "}
+              {currentIssue.publicationWindow?.trim() || issueLabels.periodLabel}
             </p>
             <p>
-              <strong>{issueLabels.headerLabel}</strong>
-            </p>
-            <p>
-              <strong>Publication Window:</strong> {issueLabels.periodLabel}
-            </p>
-            <p>
-              <strong>Volume No.</strong> {issueLabels.volumeLabel} | <strong>Issue No.</strong>{" "}
-              {issueLabels.issueNoLabel}
-            </p>
-            <p>
-              <strong>Title:</strong> {currentIssue.title}
+              <strong>{currentIssue.volumeDisplay?.trim() || issueLabels.headerLabel}</strong>
             </p>
             <div className="issue-table-wrap">
               <table className="issue-table">

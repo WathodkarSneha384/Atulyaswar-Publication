@@ -28,13 +28,17 @@ export type JournalIssue = {
   volume: string;
   issueNo: string;
   title: string;
+  publicationWindow?: string;
+  volumeDisplay?: string;
   status: IssueStatus;
   createdAt: string;
   entries: IssueEntry[];
 };
 
 type NewIssueInput = {
-  title: string;
+  title?: string;
+  publicationWindow?: string;
+  volumeDisplay?: string;
   publicationDate?: Date;
 };
 
@@ -44,7 +48,12 @@ type NewEntryInput = {
   pageNo: string;
   pdfUrl: string;
 };
-type UpdateIssueInput = Partial<Pick<JournalIssue, "year" | "volume" | "issueNo" | "title" | "status">>;
+type UpdateIssueInput = Partial<
+  Pick<
+    JournalIssue,
+    "year" | "volume" | "issueNo" | "title" | "publicationWindow" | "volumeDisplay" | "status"
+  >
+>;
 
 const DATA_DIR = process.env.VERCEL
   ? path.join("/tmp", "atulyaswar-data")
@@ -131,10 +140,9 @@ export async function getArchiveIssues() {
 
 export async function createIssue(input: NewIssueInput) {
   const all = await readAll();
-  const cleanTitle = input.title.trim();
-  if (!cleanTitle) {
-    throw new Error("Issue title is required.");
-  }
+  const cleanTitle = (input.title ?? "").trim();
+  const cleanPublicationWindow = (input.publicationWindow ?? "").trim();
+  const cleanVolumeDisplay = (input.volumeDisplay ?? "").trim();
 
   const updated = all.map((issue) =>
     issue.status === "current"
@@ -164,8 +172,9 @@ export async function createIssue(input: NewIssueInput) {
     year,
     volume,
     issueNo,
-    // Keep title explicit so issue submissions stay aligned with admin-defined issue name.
     title: cleanTitle,
+    publicationWindow: cleanPublicationWindow || undefined,
+    volumeDisplay: cleanVolumeDisplay || undefined,
     status: "current",
     createdAt: publicationDate.toISOString(),
     entries: [],

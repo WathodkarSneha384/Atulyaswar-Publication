@@ -38,6 +38,8 @@ type IssueItem = {
   volume: string;
   issueNo: string;
   title: string;
+  publicationWindow?: string;
+  volumeDisplay?: string;
   status: "current" | "archive";
   createdAt: string;
   entries: IssueEntry[];
@@ -177,6 +179,8 @@ export default function AdminDashboard() {
 
   const [newIssue, setNewIssue] = useState({
     title: "",
+    publicationWindow: "",
+    volumeDisplay: "",
   });
 
   const currentRows = useMemo(() => {
@@ -538,7 +542,7 @@ export default function AdminDashboard() {
       setError(apiErrorMessage(data.error, "Failed to create issue."));
       return;
     }
-    setNewIssue({ title: "" });
+    setNewIssue({ title: "", publicationWindow: "", volumeDisplay: "" });
     setSuccess("Issue created. Previous current issue moved to archive.");
     await loadCurrentTabData("issues");
   }
@@ -806,10 +810,22 @@ export default function AdminDashboard() {
             <form className="issue-create-inline" onSubmit={createIssue}>
               <input
                 className="subscribe-input"
-                placeholder="Issue title"
+                placeholder="Title (optional)"
                 value={newIssue.title}
                 onChange={(e) => setNewIssue((p) => ({ ...p, title: e.target.value }))}
-                required
+              />
+              <input
+                className="subscribe-input"
+                placeholder="Publication Window (e.g., January-June)"
+                value={newIssue.publicationWindow}
+                onChange={(e) =>
+                  setNewIssue((p) => ({ ...p, publicationWindow: e.target.value }))}
+              />
+              <input
+                className="subscribe-input"
+                placeholder="Volume line (e.g., Volume 14, Issue 2 (January 2026))"
+                value={newIssue.volumeDisplay}
+                onChange={(e) => setNewIssue((p) => ({ ...p, volumeDisplay: e.target.value }))}
               />
               <p className="admin-auto-issue-note">
                 Volume/Issue follow a July–June volume year: Issue 1 (Jul–Dec) and Issue 2

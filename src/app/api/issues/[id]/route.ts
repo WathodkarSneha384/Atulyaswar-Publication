@@ -11,6 +11,8 @@ type UpdatePayload = {
   volume?: string;
   issueNo?: string;
   title?: string;
+  publicationWindow?: string;
+  volumeDisplay?: string;
   status?: "current" | "archive";
 };
 

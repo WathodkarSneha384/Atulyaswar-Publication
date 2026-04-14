@@ -9,6 +9,8 @@ import {
 
 type CreateIssuePayload = {
   title?: string;
+  publicationWindow?: string;
+  volumeDisplay?: string;
 };
 
 export async function GET(request: Request) {
@@ -42,12 +44,11 @@ export async function POST(request: Request) {
   }
 
   const title = (payload.title ?? "").trim();
-  if (!title) {
-    return NextResponse.json({ error: "Issue title is required." }, { status: 400 });
-  }
+  const publicationWindow = (payload.publicationWindow ?? "").trim();
+  const volumeDisplay = (payload.volumeDisplay ?? "").trim();
 
   try {
-    const issue = await createIssue({ title });
+    const issue = await createIssue({ title, publicationWindow, volumeDisplay });
     return NextResponse.json({ ok: true, item: issue });
   } catch (error) {
     return NextResponse.json(
