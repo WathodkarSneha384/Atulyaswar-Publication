@@ -8,7 +8,6 @@ import {
 } from "@/lib/supabaseStore";
 import {
   getIssueFieldsFromPublicationDate,
-  getVolumeStartYearFromIssueRecord,
 } from "@/lib/volumeIssue";
 
 export type IssueStatus = "current" | "archive";
@@ -156,16 +155,6 @@ export async function createIssue(input: NewIssueInput) {
   const publicationDate = input.publicationDate ?? new Date();
   const { year, volume, issueNo, issueNumber, volumeStartYear } =
     getIssueFieldsFromPublicationDate(publicationDate);
-
-  const duplicate = updated.some((item) => {
-    const vy = getVolumeStartYearFromIssueRecord(item.year, item.issueNo);
-    return vy === volumeStartYear && item.issueNo === String(issueNumber);
-  });
-  if (duplicate) {
-    throw new Error(
-      `Issue ${issueNumber} already exists for the volume year starting July ${volumeStartYear}.`,
-    );
-  }
 
   const issue: JournalIssue = {
     id: randomUUID(),

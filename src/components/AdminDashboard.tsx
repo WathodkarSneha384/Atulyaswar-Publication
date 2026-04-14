@@ -1064,8 +1064,8 @@ export default function AdminDashboard() {
                     />
                   </label>
                   <p className="admin-auto-issue-note admin-edit-field-full">
-                    Volume/Issue follow a July–June volume year: Issue 1 (Jul-Dec) and Issue 2
-                    (Jan-Jun) share the same volume; the create date sets which half you are opening.
+                    July-December is Issue 1 and January-June is Issue 2.
+                    Both belong to the same volume year (July-June).
                   </p>
                 </div>
                 <div className="admin-toolbar">
