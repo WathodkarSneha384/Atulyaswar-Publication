@@ -5,7 +5,8 @@ import { isAdminRequest } from "@/lib/adminAuth";
 import { saveManuscriptAttachments } from "@/lib/manuscriptFiles";
 import { resolveFromEmail } from "@/lib/resolveFromEmail";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_PAPER_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_PLAGIARISM_FILE_SIZE = 5 * 1024 * 1024;
 const DOC_EXTENSIONS = [".doc", ".docx"];
 const ADMIN_SUBMISSION_EMAIL = "atulyaswarpublication@gmail.com";
 
@@ -58,7 +59,7 @@ async function sendSubmissionEmails(options: {
   address: string;
   designations: string[];
   paperFile: File;
-  plagiarismFile: File;
+  plagiarismFile?: File;
 }) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -78,7 +79,9 @@ async function sendSubmissionEmails(options: {
   const resend = new Resend(apiKey);
 
   const paperBytes = Buffer.from(await options.paperFile.arrayBuffer());
-  const plagiarismBytes = Buffer.from(await options.plagiarismFile.arrayBuffer());
+  const plagiarismBytes = options.plagiarismFile
+    ? Buffer.from(await options.plagiarismFile.arrayBuffer())
+    : null;
 
   let authorEmailSent = false;
   let adminEmailSent = false;
@@ -119,17 +122,23 @@ async function sendSubmissionEmails(options: {
         `Address with pincode: ${options.address}`,
         "",
         `Paper file: ${options.paperFile.name}`,
-        `Plagiarism report: ${options.plagiarismFile.name}`,
+        options.plagiarismFile
+          ? `Plagiarism report: ${options.plagiarismFile.name}`
+          : "Plagiarism report: Not provided",
       ].join("\n"),
       attachments: [
         {
           filename: options.paperFile.name,
           content: paperBytes,
         },
-        {
-          filename: options.plagiarismFile.name,
-          content: plagiarismBytes,
-        },
+        ...(plagiarismBytes && options.plagiarismFile
+          ? [
+              {
+                filename: options.plagiarismFile.name,
+                content: plagiarismBytes,
+              },
+            ]
+          : []),
       ],
     });
   if (adminResult.error) {
@@ -186,6 +195,51 @@ export async function POST(request: Request) {
   const plagiarismFile = formData.get("plagiarismFile");
   const accepted = formData.get("accepted");
 
+  const hasPlagiarismFile =
+    plagiarismFile instanceof File && plagiarismFile.size > 0 && plagiarismFile.name;
+
+  if (!(paperFile instanceof File) || paperFile.size === 0) {
+    return NextResponse.json(
+      { error: "Please upload the paper file." },
+      { status: 400 },
+    );
+  }
+
+  if (!hasAllowedDocExtension(paperFile.name)) {
+    return NextResponse.json(
+      { error: "Paper file must be DOC or DOCX." },
+      { status: 400 },
+    );
+  }
+
+  if (hasPlagiarismFile && !isPdf(plagiarismFile.name)) {
+    return NextResponse.json(
+      { error: "Plagiarism report must be a PDF file." },
+      { status: 400 },
+    );
+  }
+
+  if (paperFile.size > MAX_PAPER_FILE_SIZE) {
+    return NextResponse.json(
+      { error: "Paper file size should not exceed 10 MB." },
+      { status: 400 },
+    );
+  }
+
+  if (hasPlagiarismFile && plagiarismFile.size > MAX_PLAGIARISM_FILE_SIZE) {
+    return NextResponse.json(
+      { error: "Plagiarism file size should not exceed 5 MB." },
+      { status: 400 },
+    );
+  }
+
+  if (accepted !== "true") {
+    return NextResponse.json(
+      { error: "Please accept terms and conditions." },
+      { status: 400 },
+    );
+  }
+
   if (!authorNames || !title || !email || !phone || !address) {
     return NextResponse.json(
       { error: "Please fill all required fields." },
@@ -221,41 +275,6 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!(paperFile instanceof File) || !(plagiarismFile instanceof File)) {
-    return NextResponse.json(
-      { error: "Please upload both required files." },
-      { status: 400 },
-    );
-  }
-
-  if (!hasAllowedDocExtension(paperFile.name)) {
-    return NextResponse.json(
-      { error: "Paper file must be DOC or DOCX." },
-      { status: 400 },
-    );
-  }
-
-  if (!isPdf(plagiarismFile.name)) {
-    return NextResponse.json(
-      { error: "Plagiarism report must be a PDF file." },
-      { status: 400 },
-    );
-  }
-
-  if (paperFile.size > MAX_FILE_SIZE || plagiarismFile.size > MAX_FILE_SIZE) {
-    return NextResponse.json(
-      { error: "File size should not exceed 5 MB." },
-      { status: 400 },
-    );
-  }
-
-  if (accepted !== "true") {
-    return NextResponse.json(
-      { error: "Please accept terms and conditions." },
-      { status: 400 },
-    );
-  }
-
   const record = await createManuscript({
     authorNames,
     designations,
@@ -266,9 +285,13 @@ export async function POST(request: Request) {
     paperFileName: paperFile.name,
     paperFileMimeType: paperFile.type || "application/octet-stream",
     paperFileBase64: Buffer.from(await paperFile.arrayBuffer()).toString("base64"),
-    plagiarismFileName: plagiarismFile.name,
-    plagiarismFileMimeType: plagiarismFile.type || "application/pdf",
-    plagiarismFileBase64: Buffer.from(await plagiarismFile.arrayBuffer()).toString("base64"),
+    ...(hasPlagiarismFile
+      ? {
+          plagiarismFileName: plagiarismFile.name,
+          plagiarismFileMimeType: plagiarismFile.type || "application/pdf",
+          plagiarismFileBase64: Buffer.from(await plagiarismFile.arrayBuffer()).toString("base64"),
+        }
+      : {}),
   });
 
   try {
@@ -276,8 +299,12 @@ export async function POST(request: Request) {
       id: record.id,
       paperFileName: paperFile.name,
       paperBuffer: Buffer.from(record.paperFileBase64 ?? "", "base64"),
-      plagiarismFileName: plagiarismFile.name,
-      plagiarismBuffer: Buffer.from(record.plagiarismFileBase64 ?? "", "base64"),
+      ...(hasPlagiarismFile
+        ? {
+            plagiarismFileName: plagiarismFile.name,
+            plagiarismBuffer: Buffer.from(record.plagiarismFileBase64 ?? "", "base64"),
+          }
+        : {}),
     });
   } catch {
     // Non-blocking: attachments are also persisted in manuscript record.
@@ -291,7 +318,7 @@ export async function POST(request: Request) {
     address,
     designations,
     paperFile,
-    plagiarismFile,
+    ...(hasPlagiarismFile ? { plagiarismFile } : {}),
   });
 
   return NextResponse.json({ ok: true, id: record.id, emailStatus });

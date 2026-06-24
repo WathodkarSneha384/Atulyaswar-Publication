@@ -19,6 +19,13 @@ export async function GET(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Submission not found." }, { status: 404 });
   }
 
+  if (!item.plagiarismFileName) {
+    return NextResponse.json(
+      { error: "No plagiarism report was submitted with this manuscript." },
+      { status: 404 },
+    );
+  }
+
   try {
     const fileBuffer = await readManuscriptAttachment({
       id: item.id,

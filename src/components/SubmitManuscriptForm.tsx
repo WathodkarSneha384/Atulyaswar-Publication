@@ -25,7 +25,8 @@ const designationOptions = [
   "Artist",
   "Musicologist",
 ] as const;
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_PAPER_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_PLAGIARISM_FILE_SIZE = 5 * 1024 * 1024;
 const DOC_EXTENSIONS = [".doc", ".docx"];
 
 function hasAllowedDocExtension(fileName: string) {
@@ -97,10 +98,10 @@ export default function SubmitManuscriptForm() {
       return;
     }
 
-    if (selectedFile.size > MAX_FILE_SIZE) {
+    if (selectedFile.size > MAX_PAPER_FILE_SIZE) {
       event.target.value = "";
       setPaperFileName("");
-      setFieldErrors((prev) => ({ ...prev, paperFile: "Paper file size should not exceed 5 MB." }));
+      setFieldErrors((prev) => ({ ...prev, paperFile: "Paper file size should not exceed 10 MB." }));
       return;
     }
 
@@ -124,7 +125,7 @@ export default function SubmitManuscriptForm() {
       return;
     }
 
-    if (selectedFile.size > MAX_FILE_SIZE) {
+    if (selectedFile.size > MAX_PLAGIARISM_FILE_SIZE) {
       event.target.value = "";
       setPlagiarismFileName("");
       setFieldErrors((prev) => ({ ...prev, plagiarismFile: "Plagiarism file size should not exceed 5 MB." }));
@@ -192,25 +193,25 @@ export default function SubmitManuscriptForm() {
       errors.address = "Address should include a valid 6-digit pincode.";
     }
 
-    if (!(paperFile instanceof File) || !(plagiarismFile instanceof File)) {
-      if (!(paperFile instanceof File)) errors.paperFile = "Please upload paper file.";
-      if (!(plagiarismFile instanceof File)) {
-        errors.plagiarismFile = "Please upload plagiarism report.";
-      }
+    const hasPlagiarismFile =
+      plagiarismFile instanceof File && plagiarismFile.size > 0 && plagiarismFile.name;
+
+    if (!(paperFile instanceof File) || paperFile.size === 0) {
+      errors.paperFile = "Please upload paper file.";
     }
 
-    if (paperFile instanceof File && !hasAllowedDocExtension(paperFile.name)) {
+    if (paperFile instanceof File && paperFile.size > 0 && !hasAllowedDocExtension(paperFile.name)) {
       errors.paperFile = "Paper file must be DOC or DOCX.";
     }
 
-    if (plagiarismFile instanceof File && !isPdf(plagiarismFile.name)) {
+    if (hasPlagiarismFile && !isPdf(plagiarismFile.name)) {
       errors.plagiarismFile = "Plagiarism report must be a PDF file.";
     }
 
-    if (paperFile instanceof File && paperFile.size > MAX_FILE_SIZE) {
-      errors.paperFile = "Paper file size should not exceed 5 MB.";
+    if (paperFile instanceof File && paperFile.size > MAX_PAPER_FILE_SIZE) {
+      errors.paperFile = "Paper file size should not exceed 10 MB.";
     }
-    if (plagiarismFile instanceof File && plagiarismFile.size > MAX_FILE_SIZE) {
+    if (hasPlagiarismFile && plagiarismFile.size > MAX_PLAGIARISM_FILE_SIZE) {
       errors.plagiarismFile = "Plagiarism file size should not exceed 5 MB.";
     }
 
@@ -355,7 +356,7 @@ export default function SubmitManuscriptForm() {
           {fieldErrors.address && <span className="field-error-text">{fieldErrors.address}</span>}
         </label>
         <div className="file-upload-field">
-          Upload Paper: Max. size 5 MB, DOCX/DOC format only *
+          Upload Paper: Max. size 10 MB, DOCX/DOC format only *
           <input
             id="paperFile"
             type="file"
@@ -386,11 +387,11 @@ export default function SubmitManuscriptForm() {
               </button>
             ) : null}
           </label>
-          <span className="file-picker-hint">Allowed: .doc, .docx | Max size: 5 MB</span>
+          <span className="file-picker-hint">Allowed: .doc, .docx | Max size: 10 MB</span>
           {fieldErrors.paperFile && <span className="field-error-text">{fieldErrors.paperFile}</span>}
         </div>
         <div className="file-upload-field">
-          Upload Plagiarism report: Max. size 5 MB, PDF file only *
+          Upload Plagiarism report: Max. size 5 MB, PDF file only (optional)
           <input
             id="plagiarismFile"
             type="file"
@@ -398,7 +399,6 @@ export default function SubmitManuscriptForm() {
             ref={plagiarismFileInputRef}
             className="visually-hidden-file-input"
             accept=".pdf,application/pdf"
-            required
             onChange={handlePlagiarismFileChange}
           />
           <label htmlFor="plagiarismFile" className="file-picker-row">

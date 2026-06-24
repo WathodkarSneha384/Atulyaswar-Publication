@@ -18,7 +18,7 @@ type ManuscriptItem = {
   address: string;
   paperFileName: string;
   paperFileMimeType?: string;
-  plagiarismFileName: string;
+  plagiarismFileName?: string;
   plagiarismFileMimeType?: string;
   rejectedReason?: string;
 };
@@ -603,9 +603,11 @@ export default function AdminDashboard() {
                     <a href={`/api/manuscripts/${item.id}/paper`} target="_blank" rel="noreferrer">
                       Paper
                     </a>
-                    <a href={`/api/manuscripts/${item.id}/plagiarism`} target="_blank" rel="noreferrer">
-                      Plagiarism
-                    </a>
+                    {item.plagiarismFileName ? (
+                      <a href={`/api/manuscripts/${item.id}/plagiarism`} target="_blank" rel="noreferrer">
+                        Plagiarism
+                      </a>
+                    ) : null}
                     {item.status === "pending" && (
                       <>
                         <button type="button" onClick={() => approveManuscriptSubmission(item.id)}>
@@ -926,14 +928,16 @@ export default function AdminDashboard() {
                   >
                     View Paper
                   </a>
-                  <a
-                    href={`/api/manuscripts/${viewData.id}/plagiarism`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="ghost-admin-btn"
-                  >
-                    View Plagiarism Report
-                  </a>
+                  {viewData.plagiarismFileName ? (
+                    <a
+                      href={`/api/manuscripts/${viewData.id}/plagiarism`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="ghost-admin-btn"
+                    >
+                      View Plagiarism Report
+                    </a>
+                  ) : null}
                   {viewData.status === "pending" && (
                     <>
                       <button

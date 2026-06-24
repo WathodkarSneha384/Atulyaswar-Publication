@@ -25,20 +25,27 @@ export async function saveManuscriptAttachments(options: {
   id: string;
   paperFileName: string;
   paperBuffer: Buffer;
-  plagiarismFileName: string;
-  plagiarismBuffer: Buffer;
+  plagiarismFileName?: string;
+  plagiarismBuffer?: Buffer;
 }) {
   await mkdir(UPLOAD_DIR, { recursive: true });
-  await Promise.all([
+  const writes = [
     writeFile(
       getStoredFilePath(options.id, "paper", options.paperFileName),
       options.paperBuffer,
     ),
-    writeFile(
-      getStoredFilePath(options.id, "plagiarism", options.plagiarismFileName),
-      options.plagiarismBuffer,
-    ),
-  ]);
+  ];
+
+  if (options.plagiarismFileName && options.plagiarismBuffer) {
+    writes.push(
+      writeFile(
+        getStoredFilePath(options.id, "plagiarism", options.plagiarismFileName),
+        options.plagiarismBuffer,
+      ),
+    );
+  }
+
+  await Promise.all(writes);
 }
 
 export async function readManuscriptAttachment(options: {

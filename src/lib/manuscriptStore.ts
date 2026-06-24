@@ -22,7 +22,7 @@ export type ManuscriptRecord = {
   paperFileName: string;
   paperFileMimeType?: string;
   paperFileBase64?: string;
-  plagiarismFileName: string;
+  plagiarismFileName?: string;
   plagiarismFileMimeType?: string;
   plagiarismFileBase64?: string;
   rejectedReason?: string;
