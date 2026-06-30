@@ -30,7 +30,12 @@ const faqItems = [
   {
     question: "How much fees will be charged to submit the paper?",
     answer:
-      "We will let you know the fees through our official email when your paper will be selected to publish after the peer review.",
+      "We will let you know about the operational fees through our official email when your paper will be selected to publish after the peer review. The fees as per the submitted designation are different. Fees should be paid separately by the multiple authors of a research paper. Kindly contact us for the details.",
+  },
+  {
+    question: "Is plagiarism checked in the peer review process?",
+    answer:
+      "Yes, it will be checked and corresponding reply will be sent to each author through email.",
   },
   {
     question: "What is the procedure for accepting or rejecting the submission?",

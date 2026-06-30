@@ -2151,6 +2151,155 @@ a {
   line-height: 1.42;
 }
 
+.board-profile-link {
+  display: inline-flex;
+  margin-top: 0.75rem;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: #7a245f;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.board-profile-link:hover {
+  color: #5f1b4f;
+  border-bottom-color: #5f1b4f;
+}
+
+.board-profile-page {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.board-profile-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+  color: #7a245f;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.board-profile-back:hover {
+  color: #5f1b4f;
+}
+
+.board-profile-hero {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+  gap: 1.25rem;
+  padding: 1.1rem;
+  border-radius: 14px;
+  border: 1px solid #e4d6e0;
+  background: linear-gradient(135deg, #fff 0%, #faf4f8 100%);
+}
+
+.board-profile-photo-wrap {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e6d7e3;
+  background: #faf7f9;
+}
+
+.board-profile-hero-content h1 {
+  margin: 0.2rem 0 0.45rem;
+  font-size: clamp(1.45rem, 2.4vw, 2rem);
+  line-height: 1.25;
+  color: #2f1a28;
+}
+
+.board-profile-label {
+  margin: 0;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #9a6b8d;
+}
+
+.board-profile-role {
+  margin: 0;
+  font-weight: 700;
+  color: #5f1b4f;
+  font-size: 1.05rem;
+}
+
+.board-profile-details {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.board-profile-details p {
+  margin: 0;
+  color: #3f2f3a;
+  line-height: 1.45;
+}
+
+.board-profile-intro,
+.board-profile-section {
+  padding: 1rem 1.1rem;
+  border-radius: 12px;
+  border: 1px solid #eadde7;
+  background: #fff;
+}
+
+.board-profile-intro h2,
+.board-profile-section h2 {
+  margin: 0 0 0.65rem;
+  font-size: 1.15rem;
+  color: #5f1b4f;
+}
+
+.board-profile-intro p,
+.board-profile-section p {
+  margin: 0 0 0.75rem;
+  color: #3f2f3a;
+  line-height: 1.65;
+}
+
+.board-profile-section p:last-child {
+  margin-bottom: 0;
+}
+
+.board-profile-list {
+  margin: 0.35rem 0 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.board-profile-list li {
+  color: #3f2f3a;
+  line-height: 1.55;
+}
+
+.board-profile-awards {
+  background: linear-gradient(180deg, #fff 0%, #fdf8fb 100%);
+}
+
+.contact-intro {
+  margin: 0 0 0.55rem;
+  color: #3f2f3a;
+  line-height: 1.55;
+}
+
+.contact-assistance-list {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.35rem;
+  color: #3f2f3a;
+}
+
+.contact-assistance-list li {
+  line-height: 1.45;
+}
+
 .issue-table-wrap {
   margin-top: 0.85rem;
   overflow-x: auto;
@@ -3508,6 +3657,10 @@ a {
   }
 
   .board-list {
+    grid-template-columns: 1fr;
+  }
+
+  .board-profile-hero {
     grid-template-columns: 1fr;
   }
 }

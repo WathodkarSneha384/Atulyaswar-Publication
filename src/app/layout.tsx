@@ -18,7 +18,25 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   title: "Atulyaswar | Indian Music Journal",
-  description: "Atulyaswar : A Peer Reviewed,Indian Music Journal",
+  description:
+    "Atulyaswar: A Peer Reviewed Indian Music Journal for musicians, scholars, and researchers in Hindustani classical music.",
+  keywords: [
+    "Music",
+    "Research",
+    "Journal",
+    "Indian",
+    "Classical",
+    "ISSN",
+    "Instrumental",
+    "PhD",
+    "UGC",
+    "CARE",
+    "Scholars",
+    "Education",
+    "Doctorate",
+    "Raag",
+    "Sangeet",
+  ],
 };
 
 export default function RootLayout({

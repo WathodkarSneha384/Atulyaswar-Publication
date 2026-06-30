@@ -188,7 +188,17 @@ async function renderMenuPage(slug: string) {
               <li>Main body</li>
               <li>Observation/Analysis</li>
               <li>Result</li>
-              <li>Reference/Bibliography (in any recognized format)</li>
+              <li>
+                Reference/Bibliography (in any recognized format).{" "}
+                <a
+                  href="/documents/Chicago_Manual_of_Style.pdf"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-link"
+                >
+                  Chicago Manual of Style (PDF)
+                </a>
+              </li>
             </ul>
           </li>
           <li>Submit your manuscript through this website only.</li>
@@ -239,6 +249,15 @@ async function renderMenuPage(slug: string) {
     return (
       <>
         <h2 className="menu-page-title">Contact Us</h2>
+        <p className="contact-intro">
+          Reach out to us for assistance with the following:
+        </p>
+        <ul className="contact-assistance-list">
+          <li>Queries</li>
+          <li>Topics of research papers</li>
+          <li>Advertisements</li>
+          <li>Promotional activities</li>
+        </ul>
         <ContactUsForm />
       </>
     );
