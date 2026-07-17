@@ -187,14 +187,23 @@ export async function listApprovedIssueEntriesForIssue(issueId: string) {
       item.publishStatus === "published",
   );
 
-  const priorityPrefix = "atulyaswar -";
-  const prioritized = approvedAndPublished.filter((item) =>
-    item.title.trim().toLowerCase().startsWith(priorityPrefix),
-  );
-  const regular = approvedAndPublished.filter(
-    (item) => !item.title.trim().toLowerCase().startsWith(priorityPrefix),
-  );
-  const sortedEntries = [...prioritized, ...regular];
+  const normalizeTitle = (title: string) => title.trim().toLowerCase();
+  const displayRank = (title: string) => {
+    const t = normalizeTitle(title);
+    // Fixed journal front-matter order on Current Issue.
+    if (t === "front page") return 0;
+    if (t === "editorial desk") return 1;
+    const priorityPrefix = "atulyaswar -";
+    if (t.startsWith(priorityPrefix)) return 2;
+    return 3;
+  };
+
+  const sortedEntries = [...approvedAndPublished].sort((a, b) => {
+    const rankDiff = displayRank(a.title) - displayRank(b.title);
+    if (rankDiff !== 0) return rankDiff;
+    // Keep remaining papers in chronological publish order.
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
 
   return Promise.all(
     sortedEntries.map(async (item, index) => {
