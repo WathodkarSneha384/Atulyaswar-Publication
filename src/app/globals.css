@@ -3889,9 +3889,9 @@ a {
 
 .exact-docx-host {
   min-height: 70vh;
-  padding: 0.75rem;
+  padding: 0;
   border: 1px solid #d9d0e6;
-  background: #efeaf6;
+  background: #fff;
   overflow: auto;
 }
 
@@ -3900,15 +3900,16 @@ a {
 }
 
 .exact-docx-host .docx-wrapper {
-  background: transparent;
-  padding: 0.5rem 0 1.25rem;
+  background: #fff;
+  padding: 0.75rem 0 1.5rem;
 }
 
 .exact-docx-host .docx-wrapper > section.docx {
   background: #fff;
-  box-shadow: 0 1px 4px rgba(42, 31, 61, 0.12);
+  box-shadow: none;
   margin: 0 auto 1rem;
-  padding: 1.25rem 1.4rem;
+  /* Keep Word page margins from the document; avoid extra chrome that alters the masthead. */
+  padding: 0;
 }
 
 /* Match Word list numbers to body text (numbering rPr is often oversized). */
@@ -4047,33 +4048,4 @@ a {
   box-shadow: 0 1px 4px rgba(42, 31, 61, 0.12);
   background: #fff;
 }
-
-.exact-docx-host {
-  min-height: 60vh;
-  padding: 1rem;
-  border: 1px solid #d9d0e6;
-  background: #f7f4fb;
-  overflow: auto;
-}
-
-.exact-docx-host-tall {
-  min-height: 82vh;
-  max-height: none;
-}
-
-.exact-docx-host .docx-wrapper {
-  background: #fff;
-  padding: 1rem;
-}
-
-/* Keep Word list / bullet numbers the same size as body text.
-   docx-preview applies numbering rPr font-size on ::before, which is often oversized. */
-.exact-docx-host p[class*="docx-num-"]::before {
-  font-size: 1em !important;
-  font-weight: inherit !important;
-  font-family: inherit !important;
-  line-height: inherit !important;
-  vertical-align: baseline !important;
-}
-
 
