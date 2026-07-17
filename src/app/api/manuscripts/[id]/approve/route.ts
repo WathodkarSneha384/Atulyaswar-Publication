@@ -6,7 +6,7 @@ import {
   listIssueEntrySubmissions,
   updateIssueEntrySubmission,
 } from "@/lib/issueEntrySubmissionStore";
-import { readManuscriptAttachment } from "@/lib/manuscriptFiles";
+import { loadManuscriptFileBlob } from "@/lib/manuscriptFileStore";
 import {
   approveManuscript,
   getManuscriptById,
@@ -16,38 +16,31 @@ type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-async function loadManuscriptPdfFields(manuscript: {
+/** Attach the exact manuscript paper file to the issue entry (same file admin downloads). */
+async function loadManuscriptPaperFields(manuscript: {
   id: string;
   paperFileName: string;
   paperFileMimeType?: string;
   paperFileBase64?: string;
 }) {
-  const isPdf =
-    manuscript.paperFileName.toLowerCase().endsWith(".pdf") ||
-    (manuscript.paperFileMimeType ?? "").toLowerCase().includes("pdf");
-  if (!isPdf) return null;
+  const stored = await loadManuscriptFileBlob({
+    id: manuscript.id,
+    kind: "paper",
+    fileName: manuscript.paperFileName,
+    fallbackBase64: manuscript.paperFileBase64,
+    fallbackMimeType: manuscript.paperFileMimeType,
+  });
 
-  try {
-    const buffer = await readManuscriptAttachment({
-      id: manuscript.id,
-      kind: "paper",
-      originalFileName: manuscript.paperFileName,
-    });
-    return {
-      pdfFileName: manuscript.paperFileName,
-      pdfMimeType: manuscript.paperFileMimeType || "application/pdf",
-      pdfBase64: buffer.toString("base64"),
-    };
-  } catch {
-    if (manuscript.paperFileBase64) {
-      return {
-        pdfFileName: manuscript.paperFileName,
-        pdfMimeType: manuscript.paperFileMimeType || "application/pdf",
-        pdfBase64: manuscript.paperFileBase64,
-      };
-    }
-    return null;
-  }
+  if (!stored?.base64) return null;
+
+  return {
+    pdfFileName: stored.fileName || manuscript.paperFileName,
+    pdfMimeType:
+      stored.mimeType ||
+      manuscript.paperFileMimeType ||
+      "application/octet-stream",
+    pdfBase64: stored.base64,
+  };
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
@@ -75,7 +68,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Submission not found." }, { status: 404 });
   }
 
-  const pdfFields = await loadManuscriptPdfFields(manuscript);
+  const paperFields = await loadManuscriptPaperFields(manuscript);
   const allEntries = await listIssueEntrySubmissions();
   const existingEntry = allEntries.find((item) => item.manuscriptId === id);
   if (!existingEntry) {
@@ -88,9 +81,8 @@ export async function PATCH(request: Request, context: RouteContext) {
       pageNo: "TBD",
       submitterEmail: manuscript.email,
       status: "approved",
-      // Publish immediately so the paper appears on Current Issue after approve.
       publishStatus: "published",
-      ...(pdfFields ?? {}),
+      ...(paperFields ?? {}),
     });
   } else {
     await updateIssueEntrySubmission(existingEntry.id, {
@@ -102,9 +94,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       status: "approved",
       publishStatus: "published",
       rejectedReason: undefined,
-      ...(pdfFields && !existingEntry.pdfBase64 && !existingEntry.pdfUrl
-        ? pdfFields
-        : {}),
+      ...(paperFields && !existingEntry.pdfBase64 ? paperFields : {}),
     });
   }
 

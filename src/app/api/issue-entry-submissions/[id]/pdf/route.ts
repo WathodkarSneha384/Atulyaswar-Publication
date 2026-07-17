@@ -30,14 +30,13 @@ export async function GET(request: Request, context: RouteContext) {
     return NextResponse.json(
       {
         error:
-          "No uploaded file available for this entry. Upload a PDF under Issue To Publish, or open the manuscript Paper link.",
+          "No uploaded file available for this entry. Open Paper on the manuscript, or upload a PDF under Issue To Publish.",
       },
       { status: 404 },
     );
   }
 
-  // Public Current Issue: always inline (read), never force download.
-  // Admin DOC/DOCX can still download as attachment for review.
+  // Same bytes for admin and public. Public is always inline (read); admin DOC may download.
   const disposition =
     isAdmin && !file.isPdf
       ? `attachment; filename="${file.fileName.replace(/"/g, "")}"`
@@ -45,13 +44,12 @@ export async function GET(request: Request, context: RouteContext) {
 
   return new NextResponse(new Uint8Array(file.buffer), {
     headers: {
-      "Content-Type": file.isPdf
-        ? "application/pdf"
-        : file.mimeType || "application/octet-stream",
+      "Content-Type": file.mimeType || "application/octet-stream",
       "Content-Disposition": disposition,
-      "Cache-Control": "public, max-age=300",
+      "Cache-Control": "private, max-age=60",
       "X-Content-Type-Options": "nosniff",
       "X-Robots-Tag": "noindex, nofollow",
+      "X-File-Name": encodeURIComponent(file.fileName),
     },
   });
 }

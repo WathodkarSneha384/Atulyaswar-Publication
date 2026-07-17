@@ -1,18 +1,30 @@
 import { loadManuscriptFileBlob, saveManuscriptFileBlob } from "@/lib/manuscriptFileStore";
 import { getManuscriptById } from "@/lib/manuscriptStore";
 import type { IssueEntrySubmission } from "@/lib/issueEntrySubmissionStore";
+import { updateIssueEntrySubmission } from "@/lib/issueEntrySubmissionStore";
 
 export type ResolvedEntryFile = {
   buffer: Buffer;
   fileName: string;
   mimeType: string;
   isPdf: boolean;
+  isDocx: boolean;
 };
 
 function isPdfFile(fileName: string, mimeType?: string) {
   return (
     fileName.toLowerCase().endsWith(".pdf") ||
     (mimeType ?? "").toLowerCase().includes("pdf")
+  );
+}
+
+function isDocxFile(fileName: string, mimeType?: string) {
+  const lower = fileName.toLowerCase();
+  return (
+    lower.endsWith(".docx") ||
+    (mimeType ?? "").includes(
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
   );
 }
 
@@ -31,42 +43,54 @@ async function loadManuscriptPaper(manuscriptId: string): Promise<ResolvedEntryF
   if (!stored?.base64) return null;
 
   const buffer = Buffer.from(stored.base64, "base64");
+  const fileName = stored.fileName || manuscript.paperFileName || "paper.bin";
+  const mimeType =
+    stored.mimeType || manuscript.paperFileMimeType || "application/octet-stream";
 
-  // Ensure durable copy exists for future serverless reads.
   void saveManuscriptFileBlob({
     id: manuscript.id,
     kind: "paper",
-    fileName: stored.fileName || manuscript.paperFileName || "paper.bin",
-    mimeType: stored.mimeType || manuscript.paperFileMimeType || "application/octet-stream",
+    fileName,
+    mimeType,
     buffer,
   }).catch(() => undefined);
 
   return {
     buffer,
-    fileName: stored.fileName || manuscript.paperFileName || "paper.bin",
-    mimeType: stored.mimeType || manuscript.paperFileMimeType || "application/octet-stream",
-    isPdf: isPdfFile(
-      stored.fileName || manuscript.paperFileName || "",
-      stored.mimeType || manuscript.paperFileMimeType,
-    ),
+    fileName,
+    mimeType,
+    isPdf: isPdfFile(fileName, mimeType),
+    isDocx: isDocxFile(fileName, mimeType),
   };
 }
 
-/** Prefer entry PDF; fall back to the linked manuscript paper file. */
+/** Prefer entry-stored file (exact admin Read/Download source); else manuscript paper. */
 export async function resolveIssueEntryFile(
   item: IssueEntrySubmission,
 ): Promise<ResolvedEntryFile | null> {
   if (item.pdfBase64) {
+    const fileName = item.pdfFileName || "submission.bin";
+    const mimeType = item.pdfMimeType || "application/octet-stream";
     return {
       buffer: Buffer.from(item.pdfBase64, "base64"),
-      fileName: item.pdfFileName || "submission.pdf",
-      mimeType: item.pdfMimeType || "application/pdf",
-      isPdf: true,
+      fileName,
+      mimeType,
+      isPdf: isPdfFile(fileName, mimeType),
+      isDocx: isDocxFile(fileName, mimeType),
     };
   }
 
   if (item.manuscriptId) {
-    return loadManuscriptPaper(item.manuscriptId);
+    const paper = await loadManuscriptPaper(item.manuscriptId);
+    if (paper) {
+      // Backfill so Current Issue and admin use the same stored bytes next time.
+      void updateIssueEntrySubmission(item.id, {
+        pdfFileName: paper.fileName,
+        pdfMimeType: paper.mimeType,
+        pdfBase64: paper.buffer.toString("base64"),
+      }).catch(() => undefined);
+    }
+    return paper;
   }
 
   return null;
