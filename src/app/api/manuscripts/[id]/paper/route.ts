@@ -38,10 +38,18 @@ export async function GET(request: Request, context: RouteContext) {
       buffer: fileBuffer,
     }).catch(() => undefined);
 
+    const originalName = (item.paperFileName || "paper").replace(/"/g, "");
+    const asciiName =
+      originalName
+        .normalize("NFKD")
+        .replace(/[^\x20-\x7E]/g, "")
+        .replace(/\s+/g, " ")
+        .trim() || "paper.bin";
+
     return new NextResponse(new Uint8Array(fileBuffer), {
       headers: {
         "Content-Type": item.paperFileMimeType || "application/octet-stream",
-        "Content-Disposition": `attachment; filename="${item.paperFileName}"`,
+        "Content-Disposition": `attachment; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(originalName)}`,
       },
     });
   } catch {
