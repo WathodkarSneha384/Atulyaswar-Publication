@@ -24,7 +24,9 @@ export async function GET(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  if (!item.pdfBase64 && item.pdfUrl?.trim() && !item.manuscriptId) {
+  // An Issue To Publish URL is also an explicit publication file and must
+  // take priority over the original manuscript attachment.
+  if (!item.pdfBase64 && item.pdfUrl?.trim()) {
     return NextResponse.redirect(item.pdfUrl.trim());
   }
 

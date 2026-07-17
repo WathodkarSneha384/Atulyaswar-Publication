@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type ExactFileReaderProps = {
   title: string;
@@ -17,35 +17,23 @@ function blockCopyShortcuts(event: KeyboardEvent) {
   }
 }
 
-/** Strip oversized font-size from docx-preview list number ::before styles. */
-function normalizeDocxListMarkers(host: HTMLElement) {
-  const styleTags = host.querySelectorAll("style");
-  styleTags.forEach((styleEl) => {
-    const css = styleEl.textContent || "";
-    if (!css.includes(":before") && !css.includes("::before")) return;
-    styleEl.textContent = css.replace(
-      /(p\.docx-num-[^{]+::?before\s*\{)([^}]*)(\})/gi,
-      (_match, start: string, body: string, end: string) => {
-        const cleaned = body
-          .replace(/font-size\s*:\s*[^;]+;?/gi, "")
-          .replace(/font-weight\s*:\s*[^;]+;?/gi, "")
-          .replace(/line-height\s*:\s*[^;]+;?/gi, "");
-        return `${start}${cleaned} font-size: 1em !important; font-weight: inherit !important; line-height: inherit !important;${end}`;
-      },
-    );
-  });
-}
-
 export default function ExactFileReader({ title, entryId }: ExactFileReaderProps) {
-  const docxHostRef = useRef<HTMLDivElement | null>(null);
-  const docxBufferRef = useRef<ArrayBuffer | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [kind, setKind] = useState<PaperKind>("");
   const [pdfObjectUrl, setPdfObjectUrl] = useState("");
-  const [officeEmbedSrc, setOfficeEmbedSrc] = useState("");
 
   const filePath = `/api/issue-entry-submissions/${entryId}/pdf`;
+
+  // Word files: Microsoft Office Online keeps page header/masthead closest to the upload.
+  // (docx-preview rewrites tables/images and changes the journal header look.)
+  const wordEmbedSrc = useMemo(() => {
+    if (typeof window === "undefined" || (kind !== "docx" && kind !== "doc")) {
+      return "";
+    }
+    const absolute = `${window.location.origin}${filePath}`;
+    return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absolute)}`;
+  }, [filePath, kind]);
 
   useEffect(() => {
     const blockClipboard = (event: Event) => event.preventDefault();
@@ -79,9 +67,6 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
       setError("");
       setKind("");
       setPdfObjectUrl("");
-      setOfficeEmbedSrc("");
-      docxBufferRef.current = null;
-      if (docxHostRef.current) docxHostRef.current.innerHTML = "";
 
       try {
         const response = await fetch(filePath, { cache: "no-store" });
@@ -100,13 +85,11 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
         const isPdf =
           isPdfMagic ||
           headerKind === "pdf" ||
-          contentType.includes("application/pdf") ||
-          name.toLowerCase().endsWith(".pdf");
+          contentType.includes("application/pdf");
 
         if (cancelled) return;
 
-        // Real PDFs: show inline via blob URL (never Google Docs — it often says
-        // "No preview available" for our Vercel file URLs).
+        // PDF upload: show exact bytes inline (header matches the uploaded PDF).
         if (isPdf) {
           objectUrl = URL.createObjectURL(
             new Blob([buffer], { type: "application/pdf" }),
@@ -120,29 +103,14 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
         const isZipMagic =
           bytes.length >= 4 &&
           bytes[0] === 0x50 &&
-          bytes[1] === 0x4b &&
-          (bytes[2] === 0x03 || bytes[2] === 0x05 || bytes[2] === 0x07) &&
-          (bytes[3] === 0x04 || bytes[3] === 0x06 || bytes[3] === 0x08);
+          bytes[1] === 0x4b;
         const isDocx =
           headerKind === "docx" ||
           name.toLowerCase().endsWith(".docx") ||
-          contentType.includes(
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          ) ||
+          contentType.includes("wordprocessingml") ||
           (isZipMagic && !name.toLowerCase().endsWith(".doc"));
 
-        if (isDocx) {
-          docxBufferRef.current = buffer;
-          setKind("docx");
-          return;
-        }
-
-        // Legacy .doc — Office Online (same-origin converters can't render .doc).
-        const absolute = `${window.location.origin}${filePath}`;
-        setKind("doc");
-        setOfficeEmbedSrc(
-          `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absolute)}`,
-        );
+        setKind(isDocx ? "docx" : "doc");
         setLoading(false);
       } catch (loadError) {
         if (cancelled) return;
@@ -157,55 +125,6 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [filePath]);
-
-  // Render DOCX after host mounts — same-origin, no Google "No preview available".
-  useEffect(() => {
-    if (kind !== "docx" || !docxBufferRef.current) return;
-
-    let cancelled = false;
-
-    async function renderDocx() {
-      const host = docxHostRef.current;
-      const buffer = docxBufferRef.current;
-      if (!host || !buffer) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        host.innerHTML = "";
-        const { renderAsync } = await import("docx-preview");
-        if (cancelled) return;
-        await renderAsync(buffer, host, undefined, {
-          className: "docx",
-          inWrapper: true,
-          ignoreWidth: false,
-          ignoreHeight: false,
-          breakPages: true,
-          renderHeaders: true,
-          renderFooters: true,
-          useBase64URL: true,
-        });
-        if (cancelled) return;
-        normalizeDocxListMarkers(host);
-      } catch (renderError) {
-        if (cancelled) return;
-        setError(
-          renderError instanceof Error
-            ? renderError.message
-            : "Unable to display the Word document.",
-        );
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    void renderDocx();
-    return () => {
-      cancelled = true;
-    };
-  }, [kind]);
 
   const pdfSrc = pdfObjectUrl
     ? `${pdfObjectUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`
@@ -236,19 +155,11 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
         </div>
       ) : null}
 
-      {kind === "docx" ? (
-        <div
-          ref={docxHostRef}
-          className="exact-docx-host exact-docx-host-tall"
-          aria-label={title}
-        />
-      ) : null}
-
-      {kind === "doc" && officeEmbedSrc ? (
+      {(kind === "docx" || kind === "doc") && wordEmbedSrc ? (
         <div className="pdf-reader-frame-wrap pdf-reader-frame-wrap-tall">
           <iframe
             title={title}
-            src={officeEmbedSrc}
+            src={wordEmbedSrc}
             className="pdf-reader-frame"
             allowFullScreen
           />

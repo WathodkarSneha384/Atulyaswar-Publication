@@ -56,22 +56,16 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const pdfFile = form.get("pdfFile");
     if (pdfFile instanceof File && pdfFile.size > 0) {
-      if (!pdfFile.name.toLowerCase().endsWith(".pdf")) {
-        return NextResponse.json(
-          { error: "Please upload PDF file only." },
-          { status: 400 },
-        );
-      }
-
-      if (pdfFile.size > 5 * 1024 * 1024) {
-        return NextResponse.json(
-          { error: "PDF size should not exceed 5 MB." },
-          { status: 400 },
-        );
+      const { mimeForPublicationFile, validatePublicationUpload } = await import(
+        "@/lib/publicationUpload"
+      );
+      const uploadError = validatePublicationUpload(pdfFile);
+      if (uploadError) {
+        return NextResponse.json({ error: uploadError }, { status: 400 });
       }
 
       uploadedPdfFileName = pdfFile.name;
-      uploadedPdfMimeType = pdfFile.type || "application/pdf";
+      uploadedPdfMimeType = mimeForPublicationFile(pdfFile.name, pdfFile.type);
       uploadedPdfBase64 = Buffer.from(await pdfFile.arrayBuffer()).toString("base64");
       payload.pdfUrl = undefined;
     }

@@ -3,7 +3,7 @@ import { readManuscriptAttachment } from "@/lib/manuscriptFiles";
 import { saveManuscriptFileBlob } from "@/lib/manuscriptFileStore";
 import {
   bufferIsPdf,
-  resolveIssueEntryFile,
+  resolveIssueEntryUploadExact,
   type ResolvedEntryFile,
 } from "@/lib/issueEntryFile";
 import type { IssueEntrySubmission } from "@/lib/issueEntrySubmissionStore";
@@ -73,15 +73,19 @@ export async function loadManuscriptPaperExact(
 }
 
 /**
- * Published Current Issue paper = exact admin manuscript Paper file when linked,
- * otherwise the issue-entry stored file.
+ * Published Current Issue paper:
+ * 1. Exact file uploaded under Issue To Publish (PDF/DOC/DOCX) — as-is.
+ * 2. Original manuscript Paper only when no issue file was uploaded.
  */
 export async function loadPublishedEntryPaperExact(
   item: IssueEntrySubmission,
 ): Promise<ResolvedEntryFile | null> {
+  const uploaded = resolveIssueEntryUploadExact(item);
+  if (uploaded) return uploaded;
+
   if (item.manuscriptId) {
-    const paper = await loadManuscriptPaperExact(item.manuscriptId);
-    if (paper) return paper;
+    return loadManuscriptPaperExact(item.manuscriptId);
   }
-  return resolveIssueEntryFile(item);
+
+  return null;
 }

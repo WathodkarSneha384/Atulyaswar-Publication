@@ -1011,11 +1011,11 @@ export default function AdminDashboard() {
                     ))}
                   {activeTab === "entrySubmissions" && (
                     <label className="admin-edit-field admin-edit-field-full">
-                      Replace PDF (optional)
+                      Replace publication file (PDF / DOC / DOCX, optional)
                       <input
                         type="file"
                         name="pdfFile"
-                        accept=".pdf,application/pdf"
+                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                         className="subscribe-input"
                       />
                     </label>

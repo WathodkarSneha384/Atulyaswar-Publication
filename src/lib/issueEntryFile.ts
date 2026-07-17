@@ -1,8 +1,6 @@
 import { loadManuscriptFileBlob, saveManuscriptFileBlob } from "@/lib/manuscriptFileStore";
 import { getManuscriptById } from "@/lib/manuscriptStore";
 import type { IssueEntrySubmission } from "@/lib/issueEntrySubmissionStore";
-import { updateIssueEntrySubmission } from "@/lib/issueEntrySubmissionStore";
-import { isOfficePaperFile } from "@/lib/convertOfficeToPdf";
 
 export type ResolvedEntryFile = {
   buffer: Buffer;
@@ -35,10 +33,18 @@ function toResolved(
   mimeType: string,
 ): ResolvedEntryFile {
   const isPdf = bufferIsPdf(buffer);
+  const lower = fileName.toLowerCase();
   return {
     buffer,
     fileName,
-    mimeType: isPdf ? "application/pdf" : mimeType || "application/octet-stream",
+    mimeType: isPdf
+      ? "application/pdf"
+      : mimeType ||
+        (lower.endsWith(".docx")
+          ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          : lower.endsWith(".doc")
+            ? "application/msword"
+            : "application/octet-stream"),
     isPdf,
     isDocx: !isPdf && isDocxFile(fileName, mimeType),
   };
@@ -74,7 +80,19 @@ async function loadManuscriptPaper(manuscriptId: string): Promise<ResolvedEntryF
   return toResolved(buffer, fileName, mimeType);
 }
 
-/** Original uploaded manuscript paper (ignores converted PDF cache on the entry). */
+/** Exact Issue To Publish upload bytes (PDF or Word) — never rewrite/swap. */
+export function resolveIssueEntryUploadExact(
+  item: IssueEntrySubmission,
+): ResolvedEntryFile | null {
+  if (!item.pdfBase64) return null;
+  return toResolved(
+    Buffer.from(item.pdfBase64, "base64"),
+    item.pdfFileName || "submission.bin",
+    item.pdfMimeType || "application/octet-stream",
+  );
+}
+
+/** Original uploaded manuscript paper. */
 export async function resolveIssueEntryOriginalFile(
   item: IssueEntrySubmission,
 ): Promise<ResolvedEntryFile | null> {
@@ -82,45 +100,21 @@ export async function resolveIssueEntryOriginalFile(
     const paper = await loadManuscriptPaper(item.manuscriptId);
     if (paper) return paper;
   }
-  return resolveIssueEntryFile(item);
+  return resolveIssueEntryUploadExact(item);
 }
 
-/** Prefer entry-stored file (exact admin Read/Download source); else manuscript paper. */
+/**
+ * Prefer exact Issue To Publish file; else manuscript Paper.
+ * Do not discard Word uploads from Issue To Publish.
+ */
 export async function resolveIssueEntryFile(
   item: IssueEntrySubmission,
 ): Promise<ResolvedEntryFile | null> {
-  if (item.pdfBase64) {
-    const buffer = Buffer.from(item.pdfBase64, "base64");
-    const fileName = item.pdfFileName || "submission.bin";
-    const mimeType = item.pdfMimeType || "application/octet-stream";
-    const resolved = toResolved(buffer, fileName, mimeType);
-
-    // Ignore bogus "PDF" cache (e.g. Word bytes saved with a .pdf name).
-    if (resolved.isPdf) {
-      return resolved;
-    }
-
-    if (item.manuscriptId) {
-      const paper = await loadManuscriptPaper(item.manuscriptId);
-      if (paper) return paper;
-    }
-
-    // Keep non-PDF entry file only if it is a Word document we can render.
-    if (isOfficePaperFile(fileName, mimeType) || resolved.isDocx) {
-      return resolved;
-    }
-  }
+  const uploaded = resolveIssueEntryUploadExact(item);
+  if (uploaded) return uploaded;
 
   if (item.manuscriptId) {
-    const paper = await loadManuscriptPaper(item.manuscriptId);
-    if (paper?.isPdf) {
-      void updateIssueEntrySubmission(item.id, {
-        pdfFileName: paper.fileName,
-        pdfMimeType: "application/pdf",
-        pdfBase64: paper.buffer.toString("base64"),
-      }).catch(() => undefined);
-    }
-    return paper;
+    return loadManuscriptPaper(item.manuscriptId);
   }
 
   return null;

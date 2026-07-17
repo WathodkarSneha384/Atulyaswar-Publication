@@ -116,21 +116,16 @@ export async function POST(request: Request) {
     const pdfFile = form.get("pdfFile");
 
     if (pdfFile instanceof File && pdfFile.size > 0) {
-      if (!pdfFile.name.toLowerCase().endsWith(".pdf")) {
-        return NextResponse.json(
-          { error: "Please upload PDF file only." },
-          { status: 400 },
-        );
-      }
-      if (pdfFile.size > 5 * 1024 * 1024) {
-        return NextResponse.json(
-          { error: "PDF size should not exceed 5 MB." },
-          { status: 400 },
-        );
+      const { mimeForPublicationFile, validatePublicationUpload } = await import(
+        "@/lib/publicationUpload"
+      );
+      const uploadError = validatePublicationUpload(pdfFile);
+      if (uploadError) {
+        return NextResponse.json({ error: uploadError }, { status: 400 });
       }
 
       pdfFileName = pdfFile.name;
-      pdfMimeType = pdfFile.type || "application/pdf";
+      pdfMimeType = mimeForPublicationFile(pdfFile.name, pdfFile.type);
       pdfBytes = Buffer.from(await pdfFile.arrayBuffer());
       pdfBase64 = pdfBytes.toString("base64");
     }
