@@ -160,10 +160,16 @@ export async function updateIssueEntrySubmission(
   const index = all.findIndex((item) => item.id === id);
   if (index === -1) return null;
 
-  all[index] = {
-    ...all[index],
-    ...updates,
-  };
+  const next: IssueEntrySubmission = { ...all[index] };
+  for (const [key, value] of Object.entries(updates) as [
+    keyof UpdateSubmissionInput,
+    UpdateSubmissionInput[keyof UpdateSubmissionInput],
+  ][]) {
+    if (value === undefined) continue;
+    (next as Record<string, unknown>)[key as string] = value;
+  }
+
+  all[index] = next;
   await writeAll(all);
   return all[index];
 }

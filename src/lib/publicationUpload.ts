@@ -17,12 +17,40 @@ export function mimeForPublicationFile(fileName: string, fileType?: string) {
   return fileType || "application/octet-stream";
 }
 
-export function validatePublicationUpload(file: File): string | null {
-  if (!isAllowedPublicationFileName(file.name)) {
+export function validatePublicationUpload(
+  fileName: string,
+  size: number,
+): string | null {
+  if (!isAllowedPublicationFileName(fileName)) {
     return "Please upload a PDF, DOC, or DOCX file.";
   }
-  if (file.size > MAX_PUBLICATION_BYTES) {
+  if (size > MAX_PUBLICATION_BYTES) {
     return "File size should not exceed 8 MB.";
   }
   return null;
+}
+
+/**
+ * Next.js/Node FormData may return File or Blob. Accept either so replace uploads
+ * are not silently skipped.
+ */
+export function getPublicationUploadFromForm(form: FormData): {
+  fileName: string;
+  mimeType: string;
+  blob: Blob;
+} | null {
+  const value = form.get("pdfFile");
+  if (!value || typeof value === "string") return null;
+  if (!(value instanceof Blob) || value.size <= 0) return null;
+
+  const fileName =
+    "name" in value && typeof (value as File).name === "string" && (value as File).name
+      ? (value as File).name
+      : "publication.bin";
+
+  return {
+    fileName,
+    mimeType: mimeForPublicationFile(fileName, value.type),
+    blob: value,
+  };
 }

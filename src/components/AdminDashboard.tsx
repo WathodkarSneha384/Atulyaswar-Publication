@@ -329,9 +329,20 @@ export default function AdminDashboard() {
     let response: Response;
     if (activeTab === "entrySubmissions") {
       const pdfFile = formData.get("pdfFile");
-      if (!(pdfFile instanceof File) || pdfFile.size === 0) {
+      if (!(pdfFile instanceof Blob) || pdfFile.size === 0) {
         formData.delete("pdfFile");
+      } else if (!(pdfFile instanceof File)) {
+        // Ensure the field is a named File for reliable multipart parsing.
+        const named = new File([pdfFile], "publication.bin", {
+          type: pdfFile.type || "application/octet-stream",
+        });
+        formData.set("pdfFile", named);
       }
+      // Never send stale filename text as the source of truth for replace.
+      formData.delete("pdfFileName");
+      formData.delete("pdfMimeType");
+      formData.delete("pdfBase64");
+
       response = await fetch(endpoint, {
         method: "PATCH",
         body: formData,
@@ -356,14 +367,23 @@ export default function AdminDashboard() {
       });
     }
 
-    const data = (await response.json()) as { ok?: boolean; error?: string };
+    const data = (await response.json()) as {
+      ok?: boolean;
+      error?: string;
+      replacedFile?: boolean;
+      pdfFileName?: string;
+    };
     if (!response.ok || !data.ok) {
       setError(apiErrorMessage(data.error, "Update failed."));
       return;
     }
 
     setEditData(null);
-    setSuccess("Updated successfully.");
+    setSuccess(
+      data.replacedFile && data.pdfFileName
+        ? `Updated successfully. Publication file replaced with “${data.pdfFileName}”.`
+        : "Updated successfully.",
+    );
     await loadCurrentTabData(activeTab);
   }
 
@@ -997,6 +1017,7 @@ export default function AdminDashboard() {
                           "manuscriptId",
                           "pdfBase64",
                           "pdfMimeType",
+                          "pdfFileName",
                         ].includes(key),
                     )
                     .map(([key, value]) => (
@@ -1010,15 +1031,25 @@ export default function AdminDashboard() {
                       </label>
                     ))}
                   {activeTab === "entrySubmissions" && (
-                    <label className="admin-edit-field admin-edit-field-full">
-                      Replace publication file (PDF / DOC / DOCX, optional)
-                      <input
-                        type="file"
-                        name="pdfFile"
-                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                        className="subscribe-input"
-                      />
-                    </label>
+                    <>
+                      <p className="admin-edit-field admin-edit-field-full">
+                        Current publication file:{" "}
+                        <strong>
+                          {(editData as IssueEntrySubmission).pdfFileName?.trim() ||
+                            (editData as IssueEntrySubmission).pdfUrl?.trim() ||
+                            "None (using manuscript paper if linked)"}
+                        </strong>
+                      </p>
+                      <label className="admin-edit-field admin-edit-field-full">
+                        Replace publication file (PDF / DOC / DOCX)
+                        <input
+                          type="file"
+                          name="pdfFile"
+                          accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                          className="subscribe-input"
+                        />
+                      </label>
+                    </>
                   )}
                 </div>
                 <div className="admin-toolbar">

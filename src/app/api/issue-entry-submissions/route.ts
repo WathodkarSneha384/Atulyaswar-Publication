@@ -113,20 +113,19 @@ export async function POST(request: Request) {
     pageNo = clean(String(form.get("pageNo") ?? ""));
     pdfUrl = clean(String(form.get("pdfUrl") ?? ""));
     submitterEmail = clean(String(form.get("submitterEmail") ?? ""));
-    const pdfFile = form.get("pdfFile");
-
-    if (pdfFile instanceof File && pdfFile.size > 0) {
-      const { mimeForPublicationFile, validatePublicationUpload } = await import(
-        "@/lib/publicationUpload"
-      );
-      const uploadError = validatePublicationUpload(pdfFile);
+    const { getPublicationUploadFromForm, validatePublicationUpload } = await import(
+      "@/lib/publicationUpload"
+    );
+    const upload = getPublicationUploadFromForm(form);
+    if (upload) {
+      const uploadError = validatePublicationUpload(upload.fileName, upload.blob.size);
       if (uploadError) {
         return NextResponse.json({ error: uploadError }, { status: 400 });
       }
 
-      pdfFileName = pdfFile.name;
-      pdfMimeType = mimeForPublicationFile(pdfFile.name, pdfFile.type);
-      pdfBytes = Buffer.from(await pdfFile.arrayBuffer());
+      pdfFileName = upload.fileName;
+      pdfMimeType = upload.mimeType;
+      pdfBytes = Buffer.from(await upload.blob.arrayBuffer());
       pdfBase64 = pdfBytes.toString("base64");
     }
   } else {

@@ -60,7 +60,7 @@ export async function GET(request: Request, context: RouteContext) {
       "Content-Disposition": asAttachment
         ? `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(originalName)}`
         : `inline; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(originalName)}`,
-      "Cache-Control": "public, max-age=300",
+      "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
       "X-Robots-Tag": "noindex, nofollow",
       "X-File-Name": encodeURIComponent(originalName),

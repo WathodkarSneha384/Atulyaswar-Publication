@@ -54,20 +54,21 @@ export async function PATCH(request: Request, context: RouteContext) {
       pdfUrl: clean(String(form.get("pdfUrl") ?? "")) || undefined,
     };
 
-    const pdfFile = form.get("pdfFile");
-    if (pdfFile instanceof File && pdfFile.size > 0) {
-      const { mimeForPublicationFile, validatePublicationUpload } = await import(
-        "@/lib/publicationUpload"
-      );
-      const uploadError = validatePublicationUpload(pdfFile);
+    const { getPublicationUploadFromForm, validatePublicationUpload } = await import(
+      "@/lib/publicationUpload"
+    );
+    const upload = getPublicationUploadFromForm(form);
+    if (upload) {
+      const uploadError = validatePublicationUpload(upload.fileName, upload.blob.size);
       if (uploadError) {
         return NextResponse.json({ error: uploadError }, { status: 400 });
       }
 
-      uploadedPdfFileName = pdfFile.name;
-      uploadedPdfMimeType = mimeForPublicationFile(pdfFile.name, pdfFile.type);
-      uploadedPdfBase64 = Buffer.from(await pdfFile.arrayBuffer()).toString("base64");
-      payload.pdfUrl = undefined;
+      uploadedPdfFileName = upload.fileName;
+      uploadedPdfMimeType = upload.mimeType;
+      uploadedPdfBase64 = Buffer.from(await upload.blob.arrayBuffer()).toString("base64");
+      // New file replaces any previous URL-based paper.
+      payload.pdfUrl = "";
     }
   } else {
     try {
@@ -84,13 +85,23 @@ export async function PATCH(request: Request, context: RouteContext) {
           pdfFileName: uploadedPdfFileName,
           pdfMimeType: uploadedPdfMimeType,
           pdfBase64: uploadedPdfBase64,
+          pdfUrl: "",
         }
       : {}),
   });
   if (!updated) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
-  return NextResponse.json({ ok: true, item: updated });
+  return NextResponse.json({
+    ok: true,
+    item: {
+      ...updated,
+      // Do not echo huge base64 back to the admin UI.
+      pdfBase64: updated.pdfBase64 ? "[stored]" : undefined,
+    },
+    replacedFile: Boolean(uploadedPdfFileName),
+    pdfFileName: updated.pdfFileName,
+  });
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
