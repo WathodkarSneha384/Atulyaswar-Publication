@@ -27,8 +27,12 @@ export async function GET(request: Request, context: RouteContext) {
   return new NextResponse(buffer, {
     headers: {
       "Content-Type": item.pdfMimeType || "application/pdf",
-      "Content-Disposition": `inline; filename=\"${item.pdfFileName || "submission.pdf"}\"`,
+      // inline = open in browser viewer (not force-download attachment)
+      "Content-Disposition": "inline",
       "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      // Hint to browsers/CDNs not to treat this as a downloadable asset listing
+      "X-Robots-Tag": "noindex, nofollow",
     },
   });
 }

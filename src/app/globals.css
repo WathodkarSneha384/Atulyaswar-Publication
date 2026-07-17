@@ -3839,3 +3839,56 @@ a {
   }
 }
 
+/* Read-only PDF viewer for Current Issue papers */
+.pdf-reader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-height: 70vh;
+}
+
+.pdf-reader-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.pdf-reader-kicker {
+  margin: 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #5b4578;
+}
+
+.pdf-reader-title {
+  margin: 0.2rem 0 0.35rem;
+  font-size: clamp(1.15rem, 2vw, 1.55rem);
+  line-height: 1.3;
+  color: #2a1f3d;
+}
+
+.pdf-reader-note {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.pdf-reader-frame-wrap {
+  flex: 1;
+  min-height: 72vh;
+  border: 1px solid #d9d0e6;
+  background: #f7f4fb;
+  overflow: hidden;
+}
+
+.pdf-reader-frame {
+  width: 100%;
+  height: 72vh;
+  border: 0;
+  background: #fff;
+}
+
+

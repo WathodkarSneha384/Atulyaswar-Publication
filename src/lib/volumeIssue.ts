@@ -14,12 +14,21 @@ export type VolumeIssueDetails = {
   headerLabel: string;
 };
 
-// Volume index uses the July that starts each cycle (July → following June = one volume year).
-// Example: base year 2012 → Volume 1; July 2026–Jun 2027 = one volume step.
+// Volume index for the relaunched journal: 2026 → Volume 1.
 const DEFAULT_CONFIG: VolumeIssueConfig = {
-  baseYear: 2012,
+  baseYear: 2026,
   baseVolume: 1,
 };
+
+/** Parse a volume number from admin "Volume Line" text (e.g. "Volume 1, Issue 1"). */
+export function parseVolumeFromDisplay(volumeDisplay?: string): string | null {
+  const raw = volumeDisplay?.trim() ?? "";
+  if (!raw) return null;
+  const labeled = raw.match(/volume\s*(\d+)/i);
+  if (labeled) return labeled[1];
+  if (/^\d+$/.test(raw)) return raw;
+  return null;
+}
 
 export function getVolumeNumberForYear(
   volumeStartYear: number,

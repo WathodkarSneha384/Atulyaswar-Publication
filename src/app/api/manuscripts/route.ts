@@ -7,12 +7,12 @@ import { resolveFromEmail } from "@/lib/resolveFromEmail";
 
 const MAX_PAPER_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_PLAGIARISM_FILE_SIZE = 5 * 1024 * 1024;
-const DOC_EXTENSIONS = [".doc", ".docx"];
+const PAPER_EXTENSIONS = [".doc", ".docx", ".pdf"];
 const ADMIN_SUBMISSION_EMAIL = "atulyaswarpublication@gmail.com";
 
 function hasAllowedDocExtension(fileName: string) {
   const lower = fileName.toLowerCase();
-  return DOC_EXTENSIONS.some((ext) => lower.endsWith(ext));
+  return PAPER_EXTENSIONS.some((ext) => lower.endsWith(ext));
 }
 
 function isPdf(fileName: string) {
@@ -207,7 +207,7 @@ export async function POST(request: Request) {
 
   if (!hasAllowedDocExtension(paperFile.name)) {
     return NextResponse.json(
-      { error: "Paper file must be DOC or DOCX." },
+      { error: "Paper file must be DOC, DOCX, or PDF." },
       { status: 400 },
     );
   }

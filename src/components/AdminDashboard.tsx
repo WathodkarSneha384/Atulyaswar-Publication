@@ -503,7 +503,7 @@ export default function AdminDashboard() {
       return;
     }
     setSuccess(
-      "Manuscript approved and published to Current Issue. Upload a PDF under Issue To Publish if you want a Read link.",
+      "Manuscript approved and published to Current Issue. Upload a PDF under Issue To Publish to enable the Read link (required for DOC/DOCX papers).",
     );
     await loadCurrentTabData("manuscripts");
     if (viewData && viewData.id === id) {
@@ -754,12 +754,8 @@ export default function AdminDashboard() {
                   >
                     <ActionIcon action="delete" />
                   </button>
-                  <a
-                    href={item.pdfUrl ?? `/api/issue-entry-submissions/${item.id}/pdf`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Read/Download PDF
+                  <a href={`/journal/read/${item.id}`} className="inline-link">
+                    Read PDF
                   </a>
                 </td>
               </tr>

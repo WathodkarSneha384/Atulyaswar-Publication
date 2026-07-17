@@ -8,6 +8,7 @@ import {
 } from "@/lib/supabaseStore";
 import {
   getVolumeNumberForYear,
+  parseVolumeFromDisplay,
 } from "@/lib/volumeIssue";
 
 export type IssueStatus = "current" | "archive";
@@ -116,19 +117,48 @@ export async function listIssues() {
 }
 
 export async function getCurrentIssue() {
-  const issues = await readAll();
-  const current = issues.find((issue) => issue.status === "current");
-  if (current) return current;
+  let issues = await readAll();
+  let current = issues.find((issue) => issue.status === "current");
 
-  if (issues.length === 0) return null;
+  if (!current) {
+    if (issues.length === 0) return null;
 
-  // Self-heal fallback: if current is missing, promote latest issue as current.
-  const fallback = [...issues].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))[0];
-  const updated = issues.map((issue) =>
-    issue.id === fallback.id ? { ...issue, status: "current" as const } : { ...issue, status: "archive" as const },
-  );
-  await writeAll(updated);
-  return updated.find((issue) => issue.id === fallback.id) ?? null;
+    // Self-heal fallback: if current is missing, promote latest issue as current.
+    const fallback = [...issues].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))[0];
+    issues = issues.map((issue) =>
+      issue.id === fallback.id
+        ? { ...issue, status: "current" as const }
+        : { ...issue, status: "archive" as const },
+    );
+    await writeAll(issues);
+    current = issues.find((issue) => issue.id === fallback.id);
+    if (!current) return null;
+  }
+
+  // Prefer admin Volume Line; repair legacy Volume 16 from the old 2012 base-year formula.
+  const fromDisplay = parseVolumeFromDisplay(current.volumeDisplay);
+  let repairedVolume = fromDisplay ?? current.volume;
+  let repairedYear = current.year;
+  if (
+    !fromDisplay &&
+    current.volume === "16" &&
+    (current.year === "2027" || /inaugural/i.test(current.title))
+  ) {
+    repairedVolume = "1";
+    if (current.year === "2027") repairedYear = "2026";
+  }
+
+  if (repairedVolume !== current.volume || repairedYear !== current.year) {
+    issues = issues.map((issue) =>
+      issue.id === current!.id
+        ? { ...issue, volume: repairedVolume, year: repairedYear }
+        : issue,
+    );
+    await writeAll(issues);
+    return issues.find((issue) => issue.id === current!.id) ?? current;
+  }
+
+  return current;
 }
 
 export async function getArchiveIssues() {
@@ -159,15 +189,18 @@ export async function createIssue(input: NewIssueInput) {
   const requestedIssueNo = input.issueNo === "1" || input.issueNo === "2" ? input.issueNo : "1";
   const issueNumber: 1 | 2 = requestedIssueNo === "2" ? 2 : 1;
 
-  // Create issue against the next upcoming cycle (never backdated).
-  // Example: in April, Issue 1 => Jul-Dec current year, Issue 2 => Jan-Jun next year.
+  // Issue 1 = Jul–Dec of the masthead year; Issue 2 = Jan–Jun.
+  // In H1, Issue 1 is still this year's upcoming Jul–Dec (not next calendar year).
   const displayYear =
     issueNumber === 1
-      ? (currentMonth < 6 ? currentYear : currentYear + 1)
-      : currentYear + 1;
+      ? currentYear
+      : currentMonth < 6
+        ? currentYear
+        : currentYear + 1;
   const volumeStartYear = issueNumber === 1 ? displayYear : displayYear - 1;
   const year = String(displayYear);
-  const volume = String(getVolumeNumberForYear(volumeStartYear));
+  const volumeFromDisplay = parseVolumeFromDisplay(cleanVolumeDisplay);
+  const volume = volumeFromDisplay ?? String(getVolumeNumberForYear(volumeStartYear));
   const issueNo = String(issueNumber);
 
   const issue: JournalIssue = {

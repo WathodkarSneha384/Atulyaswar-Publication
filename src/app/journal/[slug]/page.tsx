@@ -7,7 +7,7 @@ import JournalShell from "@/components/JournalShell";
 import { listApprovedIssueEntriesForIssue } from "@/lib/issueEntrySubmissionStore";
 import { getArchiveIssues, getCurrentIssue, listIssues } from "@/lib/issueStore";
 import { listManuscripts } from "@/lib/manuscriptStore";
-import { getStoredIssueDisplayLabels } from "@/lib/volumeIssue";
+import { getStoredIssueDisplayLabels, parseVolumeFromDisplay } from "@/lib/volumeIssue";
 import archiveDummyData from "@/data/archiveDummyData.json";
 
 /** Always read current issue / KV on each request (avoids stale prerendered “static” volume lines). */
@@ -80,7 +80,12 @@ async function renderMenuPage(slug: string) {
       ? getStoredIssueDisplayLabels(currentIssue)
       : null;
 
-    const adminVolumeValue = currentIssue?.volume?.trim() || issueLabels?.volumeLabel || "";
+    const adminVolumeValue = currentIssue
+      ? parseVolumeFromDisplay(currentIssue.volumeDisplay) ||
+        currentIssue.volume?.trim() ||
+        issueLabels?.volumeLabel ||
+        ""
+      : "";
     const adminIssueNoValue = currentIssue?.issueNo?.trim() || issueLabels?.issueNoLabel || "";
     const adminTitle = currentIssue?.title?.trim() || "";
     const showAdminTitle = adminTitle.length > 0 && !/^issue\s*\d+/i.test(adminTitle);
@@ -134,12 +139,7 @@ async function renderMenuPage(slug: string) {
                         <td>{entry.pageNo}</td>
                         <td>
                           {entry.readUrl ? (
-                            <a
-                              href={entry.readUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-link"
-                            >
+                            <a href={entry.readUrl} className="inline-link">
                               Read
                             </a>
                           ) : (

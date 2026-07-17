@@ -27,11 +27,11 @@ const designationOptions = [
 ] as const;
 const MAX_PAPER_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_PLAGIARISM_FILE_SIZE = 5 * 1024 * 1024;
-const DOC_EXTENSIONS = [".doc", ".docx"];
+const PAPER_EXTENSIONS = [".doc", ".docx", ".pdf"];
 
 function hasAllowedDocExtension(fileName: string) {
   const lower = fileName.toLowerCase();
-  return DOC_EXTENSIONS.some((ext) => lower.endsWith(ext));
+  return PAPER_EXTENSIONS.some((ext) => lower.endsWith(ext));
 }
 
 function isPdf(fileName: string) {
@@ -94,7 +94,7 @@ export default function SubmitManuscriptForm() {
     if (!hasAllowedDocExtension(selectedFile.name)) {
       event.target.value = "";
       setPaperFileName("");
-      setFieldErrors((prev) => ({ ...prev, paperFile: "Paper file must be DOC or DOCX." }));
+      setFieldErrors((prev) => ({ ...prev, paperFile: "Paper file must be DOC, DOCX, or PDF." }));
       return;
     }
 
@@ -201,7 +201,7 @@ export default function SubmitManuscriptForm() {
     }
 
     if (paperFile instanceof File && paperFile.size > 0 && !hasAllowedDocExtension(paperFile.name)) {
-      errors.paperFile = "Paper file must be DOC or DOCX.";
+      errors.paperFile = "Paper file must be DOC, DOCX, or PDF.";
     }
 
     if (hasPlagiarismFile && !isPdf(plagiarismFile.name)) {
@@ -363,7 +363,7 @@ export default function SubmitManuscriptForm() {
             name="paperFile"
             ref={paperFileInputRef}
             className="visually-hidden-file-input"
-            accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            accept=".doc,.docx,.pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"
             required
             onChange={handlePaperFileChange}
           />
@@ -387,7 +387,7 @@ export default function SubmitManuscriptForm() {
               </button>
             ) : null}
           </label>
-          <span className="file-picker-hint">Allowed: .doc, .docx | Max size: 10 MB</span>
+          <span className="file-picker-hint">Allowed: .doc, .docx, .pdf | Max size: 10 MB</span>
           {fieldErrors.paperFile && <span className="field-error-text">{fieldErrors.paperFile}</span>}
         </div>
         <div className="file-upload-field">
