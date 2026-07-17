@@ -331,12 +331,17 @@ export default function AdminDashboard() {
       const pdfFile = formData.get("pdfFile");
       if (!(pdfFile instanceof Blob) || pdfFile.size === 0) {
         formData.delete("pdfFile");
-      } else if (!(pdfFile instanceof File)) {
-        // Ensure the field is a named File for reliable multipart parsing.
-        const named = new File([pdfFile], "publication.bin", {
-          type: pdfFile.type || "application/octet-stream",
-        });
-        formData.set("pdfFile", named);
+      } else {
+        const fileName =
+          pdfFile instanceof File && pdfFile.name.trim()
+            ? pdfFile.name
+            : "publication.bin";
+        const mimeType = pdfFile.type || "application/octet-stream";
+        // Normalize to a named File for reliable multipart parsing on the server.
+        formData.set(
+          "pdfFile",
+          new File([pdfFile], fileName, { type: mimeType }),
+        );
       }
       // Never send stale filename text as the source of truth for replace.
       formData.delete("pdfFileName");
