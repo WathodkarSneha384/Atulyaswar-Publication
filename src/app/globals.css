@@ -3927,11 +3927,12 @@ a {
   overflow: hidden;
 }
 
-.pdf-reader-frame {
-  width: 100%;
-  height: 72vh;
-  border: 0;
-  background: #fff;
+.pdf-reader-frame-wrap-tall {
+  min-height: 78vh;
+}
+
+.pdf-reader-frame-wrap-tall .pdf-reader-frame {
+  height: 78vh;
 }
 
 .html-reader-content {

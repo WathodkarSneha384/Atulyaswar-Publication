@@ -16,12 +16,5 @@ export default async function JournalReadPage({ params }: PageProps) {
     notFound();
   }
 
-  const fileUrl =
-    item.pdfUrl?.trim() && !item.pdfBase64 && !item.manuscriptId
-      ? item.pdfUrl.trim()
-      : `/api/issue-entry-submissions/${item.id}/pdf`;
-
-  return (
-    <ExactFileReader title={item.title} entryId={item.id} fileUrl={fileUrl} />
-  );
+  return <ExactFileReader title={item.title} entryId={item.id} />;
 }
