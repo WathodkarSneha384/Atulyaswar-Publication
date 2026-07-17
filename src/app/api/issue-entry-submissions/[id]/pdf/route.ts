@@ -36,13 +36,21 @@ export async function GET(request: Request, context: RouteContext) {
   const { searchParams } = new URL(request.url);
   const asAttachment = isAdmin && searchParams.get("original") === "1";
   const kind = file.isPdf ? "pdf" : file.isDocx ? "docx" : "doc";
+  let safeName = (file.fileName || "paper").replace(/"/g, "");
+  if (file.isPdf && !safeName.toLowerCase().endsWith(".pdf")) {
+    safeName = `${safeName.replace(/\.(docx?|DOCX?)$/, "") || "paper"}.pdf`;
+  }
+  const contentType = file.isPdf
+    ? "application/pdf"
+    : file.mimeType || "application/octet-stream";
 
   return new NextResponse(new Uint8Array(file.buffer), {
     headers: {
-      "Content-Type": file.mimeType,
+      "Content-Type": contentType,
+      // Always inline for public Current Issue reading so browsers don't force download.
       "Content-Disposition": asAttachment
-        ? `attachment; filename="${file.fileName.replace(/"/g, "")}"`
-        : "inline",
+        ? `attachment; filename="${safeName}"`
+        : `inline; filename="${safeName}"`,
       "Cache-Control": "public, max-age=300",
       "X-Content-Type-Options": "nosniff",
       "X-Robots-Tag": "noindex, nofollow",

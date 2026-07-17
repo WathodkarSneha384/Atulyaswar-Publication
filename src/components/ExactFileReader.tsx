@@ -19,19 +19,22 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [kind, setKind] = useState<"pdf" | "docx" | "doc" | "">("");
+  const [pdfObjectUrl, setPdfObjectUrl] = useState("");
 
   const filePath = `/api/issue-entry-submissions/${entryId}/pdf`;
 
   const viewerSrc = useMemo(() => {
     if (typeof window === "undefined" || !kind) return "";
-    const absolute = `${window.location.origin}${filePath}`;
     if (kind === "pdf") {
-      // Native browser PDF viewer, fit page width.
-      return `${filePath}#toolbar=0&navpanes=0&scrollbar=1&zoom=page-width`;
+      // Blob URL forces inline PDF viewing (avoids browser download prompt).
+      return pdfObjectUrl
+        ? `${pdfObjectUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`
+        : "";
     }
-    // Google Docs viewer fits the uploaded Word page to the frame width.
+    const absolute = `${window.location.origin}${filePath}`;
+    // Word files keep the current Google Docs viewer.
     return `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(absolute)}`;
-  }, [filePath, kind]);
+  }, [filePath, kind, pdfObjectUrl]);
 
   useEffect(() => {
     const blockClipboard = (event: Event) => event.preventDefault();
@@ -58,51 +61,53 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
 
   useEffect(() => {
     let cancelled = false;
+    let objectUrl = "";
 
-    async function detectKind() {
+    async function loadPaper() {
       setLoading(true);
       setError("");
+      setKind("");
+      setPdfObjectUrl("");
+
       try {
-        const response = await fetch(filePath, {
-          method: "HEAD",
-          cache: "no-store",
-        });
+        const response = await fetch(filePath, { cache: "no-store" });
         if (!response.ok) {
-          const ranged = await fetch(filePath, {
-            headers: { Range: "bytes=0-4" },
-            cache: "no-store",
-          });
-          if (!ranged.ok) throw new Error("Unable to load the paper.");
-          const headerKind = ranged.headers.get("x-file-kind");
-          const name = decodeURIComponent(ranged.headers.get("x-file-name") || "");
-          const buf = new Uint8Array(await ranged.arrayBuffer());
-          const isPdf =
-            buf.length >= 4 &&
-            String.fromCharCode(buf[0], buf[1], buf[2], buf[3]) === "%PDF";
-          if (cancelled) return;
-          setKind(
-            isPdf
-              ? "pdf"
-              : headerKind === "docx" || name.toLowerCase().endsWith(".docx")
-                ? "docx"
-                : "doc",
+          throw new Error("Unable to load the paper.");
+        }
+
+        const buffer = await response.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        const headerKind = (response.headers.get("x-file-kind") || "").toLowerCase();
+        const name = decodeURIComponent(response.headers.get("x-file-name") || "");
+        const contentType = (response.headers.get("content-type") || "").toLowerCase();
+        const isPdfMagic =
+          bytes.length >= 4 &&
+          String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3]) === "%PDF";
+        const isPdf =
+          isPdfMagic ||
+          headerKind === "pdf" ||
+          contentType.includes("application/pdf") ||
+          name.toLowerCase().endsWith(".pdf");
+
+        if (cancelled) return;
+
+        if (isPdf) {
+          objectUrl = URL.createObjectURL(
+            new Blob([buffer], { type: "application/pdf" }),
           );
+          setKind("pdf");
+          setPdfObjectUrl(objectUrl);
           setLoading(false);
           return;
         }
 
-        const headerKind = response.headers.get("x-file-kind");
-        const name = decodeURIComponent(response.headers.get("x-file-name") || "");
-        if (cancelled) return;
-        if (headerKind === "pdf" || headerKind === "docx" || headerKind === "doc") {
-          setKind(headerKind);
-        } else if (name.toLowerCase().endsWith(".pdf")) {
-          setKind("pdf");
-        } else if (name.toLowerCase().endsWith(".docx")) {
+        if (headerKind === "docx" || name.toLowerCase().endsWith(".docx")) {
           setKind("docx");
-        } else {
-          setKind("doc");
+          setLoading(false);
+          return;
         }
+
+        setKind("doc");
         setLoading(false);
       } catch (loadError) {
         if (cancelled) return;
@@ -111,9 +116,10 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
       }
     }
 
-    void detectKind();
+    void loadPaper();
     return () => {
       cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [filePath]);
 
@@ -131,12 +137,23 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
 
       {viewerSrc ? (
         <div className="pdf-reader-frame-wrap pdf-reader-frame-wrap-tall">
-          <iframe
-            title={title}
-            src={viewerSrc}
-            className="pdf-reader-frame"
-            allowFullScreen
-          />
+          {kind === "pdf" ? (
+            <object
+              data={viewerSrc}
+              type="application/pdf"
+              title={title}
+              className="pdf-reader-frame"
+            >
+              <iframe title={title} src={viewerSrc} className="pdf-reader-frame" />
+            </object>
+          ) : (
+            <iframe
+              title={title}
+              src={viewerSrc}
+              className="pdf-reader-frame"
+              allowFullScreen
+            />
+          )}
         </div>
       ) : null}
     </section>
