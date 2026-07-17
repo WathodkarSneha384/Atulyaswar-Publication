@@ -26,10 +26,11 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
     if (typeof window === "undefined" || !kind) return "";
     const absolute = `${window.location.origin}${filePath}`;
     if (kind === "pdf") {
-      return `${filePath}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`;
+      // Native browser PDF viewer, fit page width.
+      return `${filePath}#toolbar=0&navpanes=0&scrollbar=1&zoom=page-width`;
     }
-    // Exact Word formatting via Microsoft Office Online (same uploaded DOC/DOCX bytes).
-    return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absolute)}`;
+    // Google Docs viewer fits the uploaded Word page to the frame width.
+    return `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(absolute)}`;
   }, [filePath, kind]);
 
   useEffect(() => {
@@ -67,14 +68,11 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
           cache: "no-store",
         });
         if (!response.ok) {
-          // Some hosts strip HEAD; fall back to a tiny ranged GET.
           const ranged = await fetch(filePath, {
             headers: { Range: "bytes=0-4" },
             cache: "no-store",
           });
-          if (!ranged.ok) {
-            throw new Error("Unable to load the paper.");
-          }
+          if (!ranged.ok) throw new Error("Unable to load the paper.");
           const headerKind = ranged.headers.get("x-file-kind");
           const name = decodeURIComponent(ranged.headers.get("x-file-name") || "");
           const buf = new Uint8Array(await ranged.arrayBuffer());
@@ -120,7 +118,7 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
   }, [filePath]);
 
   return (
-    <section className="pdf-reader pdf-reader-no-copy">
+    <section className="pdf-reader pdf-reader-fullbleed pdf-reader-no-copy">
       <header className="pdf-reader-brand-bar">
         <div className="pdf-reader-brand">
           <p className="pdf-reader-brand-name">Atulyaswar</p>
@@ -138,7 +136,12 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
 
       {viewerSrc ? (
         <div className="pdf-reader-frame-wrap pdf-reader-frame-wrap-tall">
-          <iframe title={title} src={viewerSrc} className="pdf-reader-frame" />
+          <iframe
+            title={title}
+            src={viewerSrc}
+            className="pdf-reader-frame"
+            allowFullScreen
+          />
         </div>
       ) : null}
     </section>
