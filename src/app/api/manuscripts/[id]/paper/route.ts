@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/adminAuth";
 import { getManuscriptById } from "@/lib/manuscriptStore";
 import { readManuscriptAttachment } from "@/lib/manuscriptFiles";
+import { saveManuscriptFileBlob } from "@/lib/manuscriptFileStore";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -24,25 +25,26 @@ export async function GET(request: Request, context: RouteContext) {
       id: item.id,
       kind: "paper",
       originalFileName: item.paperFileName,
+      fallbackBase64: item.paperFileBase64,
+      fallbackMimeType: item.paperFileMimeType,
     });
 
-    return new NextResponse(fileBuffer, {
+    // Backfill durable blob store when older records only had inline base64 /tmp files.
+    void saveManuscriptFileBlob({
+      id: item.id,
+      kind: "paper",
+      fileName: item.paperFileName,
+      mimeType: item.paperFileMimeType || "application/octet-stream",
+      buffer: fileBuffer,
+    }).catch(() => undefined);
+
+    return new NextResponse(new Uint8Array(fileBuffer), {
       headers: {
         "Content-Type": item.paperFileMimeType || "application/octet-stream",
         "Content-Disposition": `attachment; filename="${item.paperFileName}"`,
       },
     });
   } catch {
-    if (item.paperFileBase64) {
-      const fileBuffer = Buffer.from(item.paperFileBase64, "base64");
-      return new NextResponse(fileBuffer, {
-        headers: {
-          "Content-Type": item.paperFileMimeType || "application/octet-stream",
-          "Content-Disposition": `attachment; filename="${item.paperFileName}"`,
-        },
-      });
-    }
-
     return NextResponse.json(
       {
         error:

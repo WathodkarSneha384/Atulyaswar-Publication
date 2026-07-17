@@ -3891,4 +3891,27 @@ a {
   background: #fff;
 }
 
+.html-reader-content {
+  min-height: 60vh;
+  padding: 1.25rem 1.4rem 2rem;
+  border: 1px solid #d9d0e6;
+  background: #fff;
+  color: #2a1f3d;
+  line-height: 1.65;
+  font-size: 1.02rem;
+  overflow-x: auto;
+  user-select: text;
+}
+
+.html-reader-content p {
+  margin: 0 0 0.9rem;
+}
+
+.html-reader-content h1,
+.html-reader-content h2,
+.html-reader-content h3 {
+  margin: 1rem 0 0.55rem;
+  line-height: 1.3;
+}
+
 

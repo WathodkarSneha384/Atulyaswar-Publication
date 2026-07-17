@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { getManuscriptById } from "@/lib/manuscriptStore";
 import {
   hasSupabaseConfig,
   supabaseReadJson,
@@ -208,10 +207,9 @@ export async function listApprovedIssueEntriesForIssue(issueId: string) {
       if (item.pdfUrl?.trim() || item.pdfBase64) {
         readUrl = `/journal/read/${item.id}`;
       } else if (item.manuscriptId) {
-        const manuscript = await getManuscriptById(item.manuscriptId);
-        if (manuscript?.paperFileName || manuscript?.paperFileBase64) {
-          readUrl = `/journal/read/${item.id}`;
-        }
+        // Show Read whenever a manuscript is linked; the reader page
+        // resolves the stored paper (or explains if missing/unsupported).
+        readUrl = `/journal/read/${item.id}`;
       }
 
       return {

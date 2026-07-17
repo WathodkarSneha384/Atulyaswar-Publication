@@ -299,10 +299,12 @@ export async function POST(request: Request) {
       id: record.id,
       paperFileName: paperFile.name,
       paperBuffer: Buffer.from(record.paperFileBase64 ?? "", "base64"),
+      paperMimeType: paperFile.type || "application/octet-stream",
       ...(hasPlagiarismFile
         ? {
             plagiarismFileName: plagiarismFile.name,
             plagiarismBuffer: Buffer.from(record.plagiarismFileBase64 ?? "", "base64"),
+            plagiarismMimeType: plagiarismFile.type || "application/pdf",
           }
         : {}),
     });

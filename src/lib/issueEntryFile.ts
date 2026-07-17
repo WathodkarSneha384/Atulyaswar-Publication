@@ -1,4 +1,4 @@
-import { readManuscriptAttachment } from "@/lib/manuscriptFiles";
+import { loadManuscriptFileBlob, saveManuscriptFileBlob } from "@/lib/manuscriptFileStore";
 import { getManuscriptById } from "@/lib/manuscriptStore";
 import type { IssueEntrySubmission } from "@/lib/issueEntrySubmissionStore";
 
@@ -18,35 +18,38 @@ function isPdfFile(fileName: string, mimeType?: string) {
 
 async function loadManuscriptPaper(manuscriptId: string): Promise<ResolvedEntryFile | null> {
   const manuscript = await getManuscriptById(manuscriptId);
-  if (!manuscript?.paperFileName && !manuscript?.paperFileBase64) return null;
+  if (!manuscript) return null;
 
-  const fileName = manuscript.paperFileName || "paper.bin";
+  const stored = await loadManuscriptFileBlob({
+    id: manuscript.id,
+    kind: "paper",
+    fileName: manuscript.paperFileName,
+    fallbackBase64: manuscript.paperFileBase64,
+    fallbackMimeType: manuscript.paperFileMimeType,
+  });
 
-  // Prefer stored base64 on serverless (local /tmp uploads are ephemeral).
-  if (manuscript.paperFileBase64) {
-    return {
-      buffer: Buffer.from(manuscript.paperFileBase64, "base64"),
-      fileName,
-      mimeType: manuscript.paperFileMimeType || "application/octet-stream",
-      isPdf: isPdfFile(fileName, manuscript.paperFileMimeType),
-    };
-  }
+  if (!stored?.base64) return null;
 
-  try {
-    const buffer = await readManuscriptAttachment({
-      id: manuscript.id,
-      kind: "paper",
-      originalFileName: fileName,
-    });
-    return {
-      buffer,
-      fileName,
-      mimeType: manuscript.paperFileMimeType || "application/octet-stream",
-      isPdf: isPdfFile(fileName, manuscript.paperFileMimeType),
-    };
-  } catch {
-    return null;
-  }
+  const buffer = Buffer.from(stored.base64, "base64");
+
+  // Ensure durable copy exists for future serverless reads.
+  void saveManuscriptFileBlob({
+    id: manuscript.id,
+    kind: "paper",
+    fileName: stored.fileName || manuscript.paperFileName || "paper.bin",
+    mimeType: stored.mimeType || manuscript.paperFileMimeType || "application/octet-stream",
+    buffer,
+  }).catch(() => undefined);
+
+  return {
+    buffer,
+    fileName: stored.fileName || manuscript.paperFileName || "paper.bin",
+    mimeType: stored.mimeType || manuscript.paperFileMimeType || "application/octet-stream",
+    isPdf: isPdfFile(
+      stored.fileName || manuscript.paperFileName || "",
+      stored.mimeType || manuscript.paperFileMimeType,
+    ),
+  };
 }
 
 /** Prefer entry PDF; fall back to the linked manuscript paper file. */
@@ -72,6 +75,6 @@ export async function resolveIssueEntryFile(
 export async function issueEntryHasReadableFile(item: IssueEntrySubmission) {
   if (item.pdfUrl?.trim() || item.pdfBase64) return true;
   if (!item.manuscriptId) return false;
-  const manuscript = await getManuscriptById(item.manuscriptId);
-  return Boolean(manuscript?.paperFileName || manuscript?.paperFileBase64);
+  const file = await loadManuscriptPaper(item.manuscriptId);
+  return Boolean(file);
 }

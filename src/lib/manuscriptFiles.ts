@@ -1,5 +1,9 @@
 import path from "node:path";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import {
+  loadManuscriptFileBlob,
+  saveManuscriptFileBlob,
+} from "@/lib/manuscriptFileStore";
 
 type AttachmentKind = "paper" | "plagiarism";
 
@@ -25,9 +29,30 @@ export async function saveManuscriptAttachments(options: {
   id: string;
   paperFileName: string;
   paperBuffer: Buffer;
+  paperMimeType?: string;
   plagiarismFileName?: string;
   plagiarismBuffer?: Buffer;
+  plagiarismMimeType?: string;
 }) {
+  await saveManuscriptFileBlob({
+    id: options.id,
+    kind: "paper",
+    fileName: options.paperFileName,
+    mimeType: options.paperMimeType || "application/octet-stream",
+    buffer: options.paperBuffer,
+  });
+
+  if (options.plagiarismFileName && options.plagiarismBuffer) {
+    await saveManuscriptFileBlob({
+      id: options.id,
+      kind: "plagiarism",
+      fileName: options.plagiarismFileName,
+      mimeType: options.plagiarismMimeType || "application/pdf",
+      buffer: options.plagiarismBuffer,
+    });
+  }
+
+  // Keep local copies for non-Vercel / fallback.
   await mkdir(UPLOAD_DIR, { recursive: true });
   const writes = [
     writeFile(
@@ -35,7 +60,6 @@ export async function saveManuscriptAttachments(options: {
       options.paperBuffer,
     ),
   ];
-
   if (options.plagiarismFileName && options.plagiarismBuffer) {
     writes.push(
       writeFile(
@@ -44,7 +68,6 @@ export async function saveManuscriptAttachments(options: {
       ),
     );
   }
-
   await Promise.all(writes);
 }
 
@@ -52,8 +75,20 @@ export async function readManuscriptAttachment(options: {
   id: string;
   kind: AttachmentKind;
   originalFileName: string;
+  fallbackBase64?: string;
+  fallbackMimeType?: string;
 }) {
+  const fromStore = await loadManuscriptFileBlob({
+    id: options.id,
+    kind: options.kind,
+    fileName: options.originalFileName,
+    fallbackBase64: options.fallbackBase64,
+    fallbackMimeType: options.fallbackMimeType,
+  });
+  if (fromStore?.base64) {
+    return Buffer.from(fromStore.base64, "base64");
+  }
+
   const filePath = getStoredFilePath(options.id, options.kind, options.originalFileName);
-  const buffer = await readFile(filePath);
-  return buffer;
+  return readFile(filePath);
 }
