@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/adminAuth";
+import { resolveIssueEntryFile } from "@/lib/issueEntryFile";
 import { getIssueEntrySubmissionById } from "@/lib/issueEntrySubmissionStore";
 
 type RouteContext = {
@@ -13,25 +14,50 @@ export async function GET(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Submission not found." }, { status: 404 });
   }
 
+  const isAdmin = isAdminRequest(request);
   const isPublic =
     item.status === "approved" && item.publishStatus === "published";
-  if (!isPublic && !isAdminRequest(request)) {
+  if (!isPublic && !isAdmin) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  if (!item.pdfBase64) {
-    return NextResponse.json({ error: "No uploaded PDF available." }, { status: 404 });
+  // External URL only — redirect public/admin there when no stored bytes.
+  if (!item.pdfBase64 && item.pdfUrl?.trim() && !item.manuscriptId) {
+    return NextResponse.redirect(item.pdfUrl.trim());
   }
 
-  const buffer = Buffer.from(item.pdfBase64, "base64");
-  return new NextResponse(buffer, {
+  const file = await resolveIssueEntryFile(item);
+  if (!file) {
+    return NextResponse.json(
+      {
+        error:
+          "No uploaded file available for this entry. Upload a PDF under Issue To Publish, or open the manuscript Paper link.",
+      },
+      { status: 404 },
+    );
+  }
+
+  // Public Current Issue reader only serves PDFs inline.
+  if (!isAdmin && !file.isPdf) {
+    return NextResponse.json(
+      {
+        error:
+          "A PDF version is required for public reading. Please upload a PDF for this entry.",
+      },
+      { status: 404 },
+    );
+  }
+
+  const disposition = file.isPdf
+    ? "inline"
+    : `attachment; filename="${file.fileName.replace(/"/g, "")}"`;
+
+  return new NextResponse(new Uint8Array(file.buffer), {
     headers: {
-      "Content-Type": item.pdfMimeType || "application/pdf",
-      // inline = open in browser viewer (not force-download attachment)
-      "Content-Disposition": "inline",
+      "Content-Type": file.mimeType,
+      "Content-Disposition": disposition,
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
-      // Hint to browsers/CDNs not to treat this as a downloadable asset listing
       "X-Robots-Tag": "noindex, nofollow",
     },
   });

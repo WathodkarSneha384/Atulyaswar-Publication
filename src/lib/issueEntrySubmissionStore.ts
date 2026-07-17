@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { getManuscriptById } from "@/lib/manuscriptStore";
 import {
   hasSupabaseConfig,
   supabaseReadJson,
@@ -201,17 +202,32 @@ export async function listApprovedIssueEntriesForIssue(issueId: string) {
   );
   const sortedEntries = [...prioritized, ...regular];
 
-  return sortedEntries.map<ApprovedIssueEntry>((item, index) => ({
-    id: item.id,
-    srNo: index + 1,
-    title: item.title,
-    author: item.author,
-    pageNo: item.pageNo,
-    readUrl:
-      item.pdfUrl || item.pdfBase64
-        ? `/journal/read/${item.id}`
-        : "",
-  }));
+  return Promise.all(
+    sortedEntries.map(async (item, index) => {
+      let readUrl = "";
+      if (item.pdfUrl?.trim() || item.pdfBase64) {
+        readUrl = `/journal/read/${item.id}`;
+      } else if (item.manuscriptId) {
+        const manuscript = await getManuscriptById(item.manuscriptId);
+        const paperName = manuscript?.paperFileName ?? "";
+        const isPdf =
+          paperName.toLowerCase().endsWith(".pdf") ||
+          (manuscript?.paperFileMimeType ?? "").toLowerCase().includes("pdf");
+        if (isPdf && (paperName || manuscript?.paperFileBase64)) {
+          readUrl = `/journal/read/${item.id}`;
+        }
+      }
+
+      return {
+        id: item.id,
+        srNo: index + 1,
+        title: item.title,
+        author: item.author,
+        pageNo: item.pageNo,
+        readUrl,
+      };
+    }),
+  );
 }
 
 export async function publishApprovedIssueEntries(issueId: string) {

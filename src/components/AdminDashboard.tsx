@@ -754,8 +754,13 @@ export default function AdminDashboard() {
                   >
                     <ActionIcon action="delete" />
                   </button>
-                  <a href={`/journal/read/${item.id}`} className="inline-link">
-                    Read PDF
+                  <a
+                    href={`/api/issue-entry-submissions/${item.id}/pdf`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-link"
+                  >
+                    Read / Download
                   </a>
                 </td>
               </tr>
@@ -901,11 +906,14 @@ export default function AdminDashboard() {
                             <td>{entry.pageNo}</td>
                             <td>
                               <a
-                                href={entry.pdfUrl ?? `/api/issue-entry-submissions/${entry.id}/pdf`}
+                                href={
+                                  entry.pdfUrl?.trim() ||
+                                  `/api/issue-entry-submissions/${entry.id}/pdf`
+                                }
                                 target="_blank"
                                 rel="noreferrer"
                               >
-                                Read
+                                Read / Download
                               </a>
                             </td>
                           </tr>
