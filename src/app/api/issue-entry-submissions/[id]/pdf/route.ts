@@ -38,9 +38,16 @@ export async function GET(request: Request, context: RouteContext) {
   const { searchParams } = new URL(request.url);
   const asAttachment = isAdmin && searchParams.get("original") === "1";
   const kind = file.isPdf ? "pdf" : file.isDocx ? "docx" : "doc";
-  let safeName = (file.fileName || "paper").replace(/"/g, "");
+  const originalName = (file.fileName || "paper").replace(/"/g, "");
+  // Content-Disposition filename= must be ASCII-safe. Devanagari names crash the response (HTTP 500).
+  const asciiName = originalName
+    .normalize("NFKD")
+    .replace(/[^\x20-\x7E]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  let safeName = asciiName || (file.isPdf ? "paper.pdf" : file.isDocx ? "paper.docx" : "paper.doc");
   if (file.isPdf && !safeName.toLowerCase().endsWith(".pdf")) {
-    safeName = `${safeName.replace(/\.(docx?|DOCX?)$/, "") || "paper"}.pdf`;
+    safeName = `${safeName.replace(/\.(docx?|DOCX?)$/i, "") || "paper"}.pdf`;
   }
   const contentType = file.isPdf
     ? "application/pdf"
@@ -51,12 +58,12 @@ export async function GET(request: Request, context: RouteContext) {
       "Content-Type": contentType,
       // Always inline for public Current Issue reading so browsers don't force download.
       "Content-Disposition": asAttachment
-        ? `attachment; filename="${safeName}"`
-        : `inline; filename="${safeName}"`,
+        ? `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(originalName)}`
+        : `inline; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(originalName)}`,
       "Cache-Control": "public, max-age=300",
       "X-Content-Type-Options": "nosniff",
       "X-Robots-Tag": "noindex, nofollow",
-      "X-File-Name": encodeURIComponent(file.fileName),
+      "X-File-Name": encodeURIComponent(originalName),
       "X-File-Kind": kind,
       // Needed so Microsoft/Google document viewers can fetch the file.
       "Access-Control-Allow-Origin": "*",
