@@ -502,7 +502,9 @@ export default function AdminDashboard() {
       setError(apiErrorMessage(data.error, "Approve failed."));
       return;
     }
-    setSuccess("Manuscript approved.");
+    setSuccess(
+      "Manuscript approved and published to Current Issue. Upload a PDF under Issue To Publish if you want a Read link.",
+    );
     await loadCurrentTabData("manuscripts");
     if (viewData && viewData.id === id) {
       setViewData(null);

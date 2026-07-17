@@ -4,6 +4,7 @@ import { getCurrentIssue } from "@/lib/issueStore";
 import {
   createIssueEntrySubmission,
   listIssueEntrySubmissions,
+  updateIssueEntrySubmission,
 } from "@/lib/issueEntrySubmissionStore";
 import {
   approveManuscript,
@@ -51,7 +52,23 @@ export async function PATCH(request: Request, context: RouteContext) {
       pageNo: "TBD",
       submitterEmail: manuscript.email,
       status: "approved",
-      publishStatus: "draft",
+      // Publish immediately so the paper appears on Current Issue after approve.
+      publishStatus: "published",
+    });
+  } else if (
+    existingEntry.status !== "approved" ||
+    existingEntry.publishStatus !== "published" ||
+    existingEntry.issueId !== currentIssue.id
+  ) {
+    await updateIssueEntrySubmission(existingEntry.id, {
+      issueId: currentIssue.id,
+      issueTitle: currentIssue.title,
+      title: manuscript.title,
+      author: manuscript.authorNames,
+      submitterEmail: manuscript.email,
+      status: "approved",
+      publishStatus: "published",
+      rejectedReason: undefined,
     });
   }
 

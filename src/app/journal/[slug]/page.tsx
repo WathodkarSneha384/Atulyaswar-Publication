@@ -143,7 +143,7 @@ async function renderMenuPage(slug: string) {
                               Read
                             </a>
                           ) : (
-                            <span>Unavailable</span>
+                            <span>-</span>
                           )}
                         </td>
                       </tr>
