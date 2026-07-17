@@ -117,7 +117,6 @@ async function renderMenuPage(slug: string) {
                     <th>Sr. No.</th>
                     <th>Title</th>
                     <th>Author</th>
-                    <th>Page No.</th>
                     <th>Read</th>
                   </tr>
                 </thead>
@@ -127,7 +126,6 @@ async function renderMenuPage(slug: string) {
                       <td>1</td>
                       <td>Issue content will be added soon</td>
                       <td>TBD</td>
-                      <td>TBD</td>
                       <td>-</td>
                     </tr>
                   ) : (
@@ -136,7 +134,6 @@ async function renderMenuPage(slug: string) {
                         <td>{entry.srNo}</td>
                         <td>{entry.title}</td>
                         <td>{entry.author}</td>
-                        <td>{entry.pageNo}</td>
                         <td>
                           {entry.readUrl ? (
                             <a href={entry.readUrl} className="inline-link">
