@@ -47,7 +47,7 @@ export async function GET(request: Request, context: RouteContext) {
       headers: {
         "Content-Type": original.mimeType || "application/octet-stream",
         "Content-Disposition": disposition,
-        "Cache-Control": "private, max-age=60",
+        "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff",
         "X-Robots-Tag": "noindex, nofollow",
         "X-File-Name": encodeURIComponent(original.fileName),
@@ -55,8 +55,9 @@ export async function GET(request: Request, context: RouteContext) {
     });
   }
 
-  // Prefer cached/native PDF when available.
   const file = await resolveIssueEntryFile(item);
+
+  // Real PDF only (magic bytes validated in resolver).
   if (file?.isPdf) {
     return new NextResponse(new Uint8Array(file.buffer), {
       headers: {
@@ -65,59 +66,42 @@ export async function GET(request: Request, context: RouteContext) {
         "Cache-Control": "private, max-age=300",
         "X-Content-Type-Options": "nosniff",
         "X-Robots-Tag": "noindex, nofollow",
-        "X-File-Name": encodeURIComponent(
-          file.fileName.toLowerCase().endsWith(".pdf")
-            ? file.fileName
-            : `${file.fileName}.pdf`,
-        ),
         "X-File-Kind": "pdf",
       },
     });
   }
 
-  // Word papers: convert to print HTML (client turns this into a PDF view).
+  // Word papers → print HTML for in-app reading (no flaky PDF conversion).
   let source = file;
   if (item.manuscriptId) {
     const original = await resolveIssueEntryOriginalFile(item);
     if (original && !original.isPdf) source = original;
   }
 
-  if (!source || !isOfficePaperFile(source.fileName, source.mimeType)) {
+  if (!source || (!isOfficePaperFile(source.fileName, source.mimeType) && !source.isDocx)) {
     return NextResponse.json(
-      {
-        error:
-          "No readable paper found. Upload a PDF or DOC/DOCX from Admin → Issue To Publish → Edit.",
-      },
+      { error: "Paper file not available." },
       { status: 404 },
     );
   }
 
   try {
     const html = await convertOfficeToHtml(source.buffer, source.fileName, item.title);
-    const pdfName = source.fileName.replace(/\.(docx?|DOCX?)$/i, "") + ".pdf";
     return NextResponse.json(
       {
         kind: "html",
         title: item.title,
-        fileName: pdfName,
         html,
       },
       {
         headers: {
           "Cache-Control": "private, max-age=60",
           "X-File-Kind": "html",
-          "X-File-Name": encodeURIComponent(pdfName),
         },
       },
     );
   } catch (error) {
     console.error("[atulyaswar] Office to HTML conversion failed", error);
-    return NextResponse.json(
-      {
-        error:
-          "Could not prepare this Word paper for reading. Please upload a PDF from Admin → Issue To Publish → Edit.",
-      },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Paper file not available." }, { status: 500 });
   }
 }

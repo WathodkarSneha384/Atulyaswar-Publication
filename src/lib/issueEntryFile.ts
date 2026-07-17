@@ -2,6 +2,7 @@ import { loadManuscriptFileBlob, saveManuscriptFileBlob } from "@/lib/manuscript
 import { getManuscriptById } from "@/lib/manuscriptStore";
 import type { IssueEntrySubmission } from "@/lib/issueEntrySubmissionStore";
 import { updateIssueEntrySubmission } from "@/lib/issueEntrySubmissionStore";
+import { isOfficePaperFile } from "@/lib/convertOfficeToPdf";
 
 export type ResolvedEntryFile = {
   buffer: Buffer;
@@ -11,11 +12,11 @@ export type ResolvedEntryFile = {
   isDocx: boolean;
 };
 
-function isPdfFile(fileName: string, mimeType?: string) {
-  return (
-    fileName.toLowerCase().endsWith(".pdf") ||
-    (mimeType ?? "").toLowerCase().includes("pdf")
-  );
+/** True PDF by magic bytes (filename alone is not enough). */
+export function bufferIsPdf(buffer: Buffer) {
+  if (buffer.length < 5) return false;
+  const head = buffer.subarray(0, 5).toString("utf8");
+  return head.startsWith("%PDF");
 }
 
 function isDocxFile(fileName: string, mimeType?: string) {
@@ -26,6 +27,21 @@ function isDocxFile(fileName: string, mimeType?: string) {
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )
   );
+}
+
+function toResolved(
+  buffer: Buffer,
+  fileName: string,
+  mimeType: string,
+): ResolvedEntryFile {
+  const isPdf = bufferIsPdf(buffer);
+  return {
+    buffer,
+    fileName,
+    mimeType: isPdf ? "application/pdf" : mimeType || "application/octet-stream",
+    isPdf,
+    isDocx: !isPdf && isDocxFile(fileName, mimeType),
+  };
 }
 
 async function loadManuscriptPaper(manuscriptId: string): Promise<ResolvedEntryFile | null> {
@@ -55,13 +71,7 @@ async function loadManuscriptPaper(manuscriptId: string): Promise<ResolvedEntryF
     buffer,
   }).catch(() => undefined);
 
-  return {
-    buffer,
-    fileName,
-    mimeType,
-    isPdf: isPdfFile(fileName, mimeType),
-    isDocx: isDocxFile(fileName, mimeType),
-  };
+  return toResolved(buffer, fileName, mimeType);
 }
 
 /** Original uploaded manuscript paper (ignores converted PDF cache on the entry). */
@@ -80,24 +90,33 @@ export async function resolveIssueEntryFile(
   item: IssueEntrySubmission,
 ): Promise<ResolvedEntryFile | null> {
   if (item.pdfBase64) {
+    const buffer = Buffer.from(item.pdfBase64, "base64");
     const fileName = item.pdfFileName || "submission.bin";
     const mimeType = item.pdfMimeType || "application/octet-stream";
-    return {
-      buffer: Buffer.from(item.pdfBase64, "base64"),
-      fileName,
-      mimeType,
-      isPdf: isPdfFile(fileName, mimeType),
-      isDocx: isDocxFile(fileName, mimeType),
-    };
+    const resolved = toResolved(buffer, fileName, mimeType);
+
+    // Ignore bogus "PDF" cache (e.g. Word bytes saved with a .pdf name).
+    if (resolved.isPdf) {
+      return resolved;
+    }
+
+    if (item.manuscriptId) {
+      const paper = await loadManuscriptPaper(item.manuscriptId);
+      if (paper) return paper;
+    }
+
+    // Keep non-PDF entry file only if it is a Word document we can render.
+    if (isOfficePaperFile(fileName, mimeType) || resolved.isDocx) {
+      return resolved;
+    }
   }
 
   if (item.manuscriptId) {
     const paper = await loadManuscriptPaper(item.manuscriptId);
     if (paper?.isPdf) {
-      // Only cache native PDFs here; DOC/DOCX are converted and cached by the PDF route.
       void updateIssueEntrySubmission(item.id, {
         pdfFileName: paper.fileName,
-        pdfMimeType: paper.mimeType,
+        pdfMimeType: "application/pdf",
         pdfBase64: paper.buffer.toString("base64"),
       }).catch(() => undefined);
     }
