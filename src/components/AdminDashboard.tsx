@@ -755,7 +755,7 @@ export default function AdminDashboard() {
                     <ActionIcon action="delete" />
                   </button>
                   <a
-                    href={`/api/issue-entry-submissions/${item.id}/pdf`}
+                    href={`/api/issue-entry-submissions/${item.id}/pdf?original=1`}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-link"

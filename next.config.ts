@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   experimental: {
     devtoolSegmentExplorer: false,
   },
+  serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core", "word-extractor"],
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,

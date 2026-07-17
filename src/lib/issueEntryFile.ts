@@ -64,6 +64,17 @@ async function loadManuscriptPaper(manuscriptId: string): Promise<ResolvedEntryF
   };
 }
 
+/** Original uploaded manuscript paper (ignores converted PDF cache on the entry). */
+export async function resolveIssueEntryOriginalFile(
+  item: IssueEntrySubmission,
+): Promise<ResolvedEntryFile | null> {
+  if (item.manuscriptId) {
+    const paper = await loadManuscriptPaper(item.manuscriptId);
+    if (paper) return paper;
+  }
+  return resolveIssueEntryFile(item);
+}
+
 /** Prefer entry-stored file (exact admin Read/Download source); else manuscript paper. */
 export async function resolveIssueEntryFile(
   item: IssueEntrySubmission,
@@ -82,8 +93,8 @@ export async function resolveIssueEntryFile(
 
   if (item.manuscriptId) {
     const paper = await loadManuscriptPaper(item.manuscriptId);
-    if (paper) {
-      // Backfill so Current Issue and admin use the same stored bytes next time.
+    if (paper?.isPdf) {
+      // Only cache native PDFs here; DOC/DOCX are converted and cached by the PDF route.
       void updateIssueEntrySubmission(item.id, {
         pdfFileName: paper.fileName,
         pdfMimeType: paper.mimeType,

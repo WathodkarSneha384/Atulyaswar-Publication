@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
-import { renderAsync } from "docx-preview";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -11,7 +10,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.vers
 
 type ExactFileReaderProps = {
   title: string;
-  /** Same endpoint admin uses for Read / Download */
+  /** Public PDF endpoint (auto-converts DOC/DOCX to print-style PDF). */
   fileUrl: string;
 };
 
@@ -23,12 +22,9 @@ function blockCopyShortcuts(event: KeyboardEvent) {
 }
 
 export default function ExactFileReader({ title, fileUrl }: ExactFileReaderProps) {
-  const docxHostRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [kind, setKind] = useState<"pdf" | "docx" | "unsupported" | "">("");
   const [pdfData, setPdfData] = useState<Uint8Array | null>(null);
-  const [docxData, setDocxData] = useState<ArrayBuffer | null>(null);
   const [pageCount, setPageCount] = useState(0);
   const [fileName, setFileName] = useState("");
   const [pageWidth, setPageWidth] = useState(900);
@@ -66,12 +62,10 @@ export default function ExactFileReader({ title, fileUrl }: ExactFileReaderProps
   useEffect(() => {
     let cancelled = false;
 
-    async function loadExactFile() {
+    async function loadPdf() {
       setLoading(true);
       setError("");
-      setKind("");
       setPdfData(null);
-      setDocxData(null);
       setPageCount(0);
 
       try {
@@ -80,68 +74,29 @@ export default function ExactFileReader({ title, fileUrl }: ExactFileReaderProps
           const payload = (await response.json().catch(() => null)) as
             | { error?: string }
             | null;
-          throw new Error(payload?.error || "Unable to load the paper file.");
+          throw new Error(payload?.error || "Unable to load the paper PDF.");
         }
 
         const buffer = await response.arrayBuffer();
-        const contentType = (response.headers.get("content-type") || "").toLowerCase();
         const headerName = response.headers.get("x-file-name");
-        const name = headerName ? decodeURIComponent(headerName) : "";
-        const lowerName = name.toLowerCase();
-
         if (cancelled) return;
-        setFileName(name);
-
-        const isPdf = contentType.includes("pdf") || lowerName.endsWith(".pdf");
-        const isDocx =
-          lowerName.endsWith(".docx") ||
-          contentType.includes(
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          );
-
-        if (isPdf) {
-          setKind("pdf");
-          setPdfData(new Uint8Array(buffer));
-          setLoading(false);
-          return;
-        }
-
-        if (isDocx) {
-          setKind("docx");
-          setDocxData(buffer);
-          setLoading(false);
-          return;
-        }
-
-        setKind("unsupported");
+        setFileName(headerName ? decodeURIComponent(headerName) : "");
+        setPdfData(new Uint8Array(buffer));
         setLoading(false);
       } catch (loadError) {
         if (cancelled) return;
         setError(
-          loadError instanceof Error ? loadError.message : "Unable to load the paper file.",
+          loadError instanceof Error ? loadError.message : "Unable to load the paper PDF.",
         );
         setLoading(false);
       }
     }
 
-    void loadExactFile();
+    void loadPdf();
     return () => {
       cancelled = true;
     };
   }, [fileUrl]);
-
-  useEffect(() => {
-    if (kind !== "docx" || !docxData || !docxHostRef.current) return;
-    const host = docxHostRef.current;
-    host.innerHTML = "";
-    void renderAsync(docxData, host, undefined, {
-      inWrapper: true,
-      ignoreWidth: false,
-      breakPages: true,
-    }).catch(() => {
-      setError("Could not open this DOCX in the reader.");
-    });
-  }, [kind, docxData]);
 
   return (
     <section className="pdf-reader pdf-reader-no-copy">
@@ -150,7 +105,7 @@ export default function ExactFileReader({ title, fileUrl }: ExactFileReaderProps
           <p className="pdf-reader-kicker">Current Issue</p>
           <h1 className="pdf-reader-title">{title}</h1>
           <p className="pdf-reader-note">
-            Read-only view — copy and download are disabled
+            Read-only PDF view — copy and download are disabled
             {fileName ? ` · ${fileName}` : ""}
           </p>
         </div>
@@ -159,10 +114,14 @@ export default function ExactFileReader({ title, fileUrl }: ExactFileReaderProps
         </Link>
       </header>
 
-      {loading ? <p className="pdf-reader-status">Loading paper…</p> : null}
+      {loading ? (
+        <p className="pdf-reader-status">
+          Preparing PDF… (Word papers are converted on first open)
+        </p>
+      ) : null}
       {error ? <p className="pdf-reader-status error">{error}</p> : null}
 
-      {kind === "pdf" && pdfData ? (
+      {pdfData ? (
         <div className="exact-pdf-pages">
           <Document
             file={{ data: pdfData }}
@@ -181,16 +140,6 @@ export default function ExactFileReader({ title, fileUrl }: ExactFileReaderProps
             ))}
           </Document>
         </div>
-      ) : null}
-
-      {kind === "docx" ? <div className="exact-docx-host" ref={docxHostRef} /> : null}
-
-      {kind === "unsupported" ? (
-        <p className="pdf-reader-status">
-          This paper is stored as a legacy <strong>.doc</strong> file. Upload the same paper as{" "}
-          <strong>PDF</strong> or <strong>DOCX</strong> from Admin → Issue To Publish → Edit to open
-          it in the reader.
-        </p>
       ) : null}
     </section>
   );
