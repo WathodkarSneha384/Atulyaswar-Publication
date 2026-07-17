@@ -3895,6 +3895,10 @@ a {
   overflow: auto;
 }
 
+.exact-docx-host-tall {
+  min-height: 82vh;
+}
+
 .exact-docx-host .docx-wrapper {
   background: transparent;
   padding: 0.5rem 0 1.25rem;
@@ -3905,6 +3909,15 @@ a {
   box-shadow: 0 1px 4px rgba(42, 31, 61, 0.12);
   margin: 0 auto 1rem;
   padding: 1.25rem 1.4rem;
+}
+
+/* Match Word list numbers to body text (numbering rPr is often oversized). */
+.exact-docx-host p[class*="docx-num-"]::before {
+  font-size: 1em !important;
+  font-weight: inherit !important;
+  font-family: inherit !important;
+  line-height: inherit !important;
+  vertical-align: baseline !important;
 }
 
 .pdf-reader-kicker {
@@ -4043,9 +4056,24 @@ a {
   overflow: auto;
 }
 
+.exact-docx-host-tall {
+  min-height: 82vh;
+  max-height: none;
+}
+
 .exact-docx-host .docx-wrapper {
   background: #fff;
   padding: 1rem;
+}
+
+/* Keep Word list / bullet numbers the same size as body text.
+   docx-preview applies numbering rPr font-size on ::before, which is often oversized. */
+.exact-docx-host p[class*="docx-num-"]::before {
+  font-size: 1em !important;
+  font-weight: inherit !important;
+  font-family: inherit !important;
+  line-height: inherit !important;
+  vertical-align: baseline !important;
 }
 
 

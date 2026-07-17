@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type ExactFileReaderProps = {
   title: string;
   entryId: string;
 };
+
+type PaperKind = "pdf" | "docx" | "doc" | "";
 
 function blockCopyShortcuts(event: KeyboardEvent) {
   const key = event.key.toLowerCase();
@@ -15,26 +17,35 @@ function blockCopyShortcuts(event: KeyboardEvent) {
   }
 }
 
+/** Strip oversized font-size from docx-preview list number ::before styles. */
+function normalizeDocxListMarkers(host: HTMLElement) {
+  const styleTags = host.querySelectorAll("style");
+  styleTags.forEach((styleEl) => {
+    const css = styleEl.textContent || "";
+    if (!css.includes(":before") && !css.includes("::before")) return;
+    styleEl.textContent = css.replace(
+      /(p\.docx-num-[^{]+::?before\s*\{)([^}]*)(\})/gi,
+      (_match, start: string, body: string, end: string) => {
+        const cleaned = body
+          .replace(/font-size\s*:\s*[^;]+;?/gi, "")
+          .replace(/font-weight\s*:\s*[^;]+;?/gi, "")
+          .replace(/line-height\s*:\s*[^;]+;?/gi, "");
+        return `${start}${cleaned} font-size: 1em !important; font-weight: inherit !important; line-height: inherit !important;${end}`;
+      },
+    );
+  });
+}
+
 export default function ExactFileReader({ title, entryId }: ExactFileReaderProps) {
+  const docxHostRef = useRef<HTMLDivElement | null>(null);
+  const docxBufferRef = useRef<ArrayBuffer | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [kind, setKind] = useState<"pdf" | "docx" | "doc" | "">("");
+  const [kind, setKind] = useState<PaperKind>("");
   const [pdfObjectUrl, setPdfObjectUrl] = useState("");
+  const [legacyViewerSrc, setLegacyViewerSrc] = useState("");
 
   const filePath = `/api/issue-entry-submissions/${entryId}/pdf`;
-
-  const viewerSrc = useMemo(() => {
-    if (typeof window === "undefined" || !kind) return "";
-    if (kind === "pdf") {
-      // Blob URL forces inline PDF viewing (avoids browser download prompt).
-      return pdfObjectUrl
-        ? `${pdfObjectUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`
-        : "";
-    }
-    const absolute = `${window.location.origin}${filePath}`;
-    // Word files keep the current Google Docs viewer.
-    return `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(absolute)}`;
-  }, [filePath, kind, pdfObjectUrl]);
 
   useEffect(() => {
     const blockClipboard = (event: Event) => event.preventDefault();
@@ -68,6 +79,9 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
       setError("");
       setKind("");
       setPdfObjectUrl("");
+      setLegacyViewerSrc("");
+      docxBufferRef.current = null;
+      if (docxHostRef.current) docxHostRef.current.innerHTML = "";
 
       try {
         const response = await fetch(filePath, { cache: "no-store" });
@@ -101,13 +115,33 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
           return;
         }
 
-        if (headerKind === "docx" || name.toLowerCase().endsWith(".docx")) {
+        const isZipMagic =
+          bytes.length >= 4 &&
+          bytes[0] === 0x50 &&
+          bytes[1] === 0x4b &&
+          (bytes[2] === 0x03 || bytes[2] === 0x05 || bytes[2] === 0x07) &&
+          (bytes[3] === 0x04 || bytes[3] === 0x06 || bytes[3] === 0x08);
+        const isDocx =
+          headerKind === "docx" ||
+          name.toLowerCase().endsWith(".docx") ||
+          contentType.includes(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          ) ||
+          // Many uploads are .docx bytes with a generic/wrong mime type.
+          (isZipMagic && !name.toLowerCase().endsWith(".doc"));
+
+        if (isDocx) {
+          docxBufferRef.current = buffer;
           setKind("docx");
-          setLoading(false);
           return;
         }
 
+        // Legacy .doc — Office Online (Google gview often enlarges list numbers).
+        const absolute = `${window.location.origin}${filePath}`;
         setKind("doc");
+        setLegacyViewerSrc(
+          `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absolute)}`,
+        );
         setLoading(false);
       } catch (loadError) {
         if (cancelled) return;
@@ -123,6 +157,59 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
     };
   }, [filePath]);
 
+  // Render DOCX after the host mounts (kind state update).
+  useEffect(() => {
+    if (kind !== "docx" || !docxBufferRef.current) return;
+
+    let cancelled = false;
+
+    async function renderDocx() {
+      const host = docxHostRef.current;
+      const buffer = docxBufferRef.current;
+      if (!host || !buffer) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        host.innerHTML = "";
+        const { renderAsync } = await import("docx-preview");
+        if (cancelled) return;
+        await renderAsync(buffer, host, undefined, {
+          className: "docx",
+          inWrapper: true,
+          ignoreWidth: false,
+          ignoreHeight: false,
+          breakPages: true,
+          renderHeaders: true,
+          renderFooters: true,
+          useBase64URL: true,
+        });
+        if (cancelled) return;
+        normalizeDocxListMarkers(host);
+      } catch (renderError) {
+        if (cancelled) return;
+        setError(
+          renderError instanceof Error
+            ? renderError.message
+            : "Unable to display the Word document.",
+        );
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void renderDocx();
+    return () => {
+      cancelled = true;
+    };
+  }, [kind]);
+
+  const pdfSrc = pdfObjectUrl
+    ? `${pdfObjectUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`
+    : "";
+
   return (
     <section className="pdf-reader pdf-reader-fullbleed pdf-reader-no-copy">
       <header className="pdf-reader-toolbar">
@@ -135,25 +222,35 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
       {loading ? <div className="pdf-reader-loading" aria-hidden="true" /> : null}
       {error ? <p className="pdf-reader-status error">{error}</p> : null}
 
-      {viewerSrc ? (
+      {kind === "pdf" && pdfSrc ? (
         <div className="pdf-reader-frame-wrap pdf-reader-frame-wrap-tall">
-          {kind === "pdf" ? (
-            <object
-              data={viewerSrc}
-              type="application/pdf"
-              title={title}
-              className="pdf-reader-frame"
-            >
-              <iframe title={title} src={viewerSrc} className="pdf-reader-frame" />
-            </object>
-          ) : (
-            <iframe
-              title={title}
-              src={viewerSrc}
-              className="pdf-reader-frame"
-              allowFullScreen
-            />
-          )}
+          <object
+            data={pdfSrc}
+            type="application/pdf"
+            title={title}
+            className="pdf-reader-frame"
+          >
+            <iframe title={title} src={pdfSrc} className="pdf-reader-frame" />
+          </object>
+        </div>
+      ) : null}
+
+      {kind === "docx" ? (
+        <div
+          ref={docxHostRef}
+          className="exact-docx-host exact-docx-host-tall"
+          aria-label={title}
+        />
+      ) : null}
+
+      {kind === "doc" && legacyViewerSrc ? (
+        <div className="pdf-reader-frame-wrap pdf-reader-frame-wrap-tall">
+          <iframe
+            title={title}
+            src={legacyViewerSrc}
+            className="pdf-reader-frame"
+            allowFullScreen
+          />
         </div>
       ) : null}
     </section>
