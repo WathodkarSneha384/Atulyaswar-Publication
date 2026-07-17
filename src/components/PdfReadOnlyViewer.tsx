@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect } from "react";
 
 type PdfReadOnlyViewerProps = {
@@ -37,9 +38,9 @@ export default function PdfReadOnlyViewer({ title, pdfSrc }: PdfReadOnlyViewerPr
           <h1 className="pdf-reader-title">{title}</h1>
           <p className="pdf-reader-note">Read-only view</p>
         </div>
-        <a href="/journal/current-issue" className="ghost-admin-btn">
+        <Link href="/journal/current-issue" className="ghost-admin-btn">
           Back to Current Issue
-        </a>
+        </Link>
       </header>
       <div className="pdf-reader-frame-wrap">
         <iframe title={`Read: ${title}`} src={embedSrc} className="pdf-reader-frame" />
