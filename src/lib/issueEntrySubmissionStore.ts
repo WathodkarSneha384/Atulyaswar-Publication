@@ -84,15 +84,10 @@ async function readAll(): Promise<IssueEntrySubmission[]> {
 
 async function writeAll(items: IssueEntrySubmission[]) {
   if (hasSupabaseConfig()) {
-    try {
-      await supabaseWriteJson(KV_KEY, items);
-      return;
-    } catch (error) {
-      console.error(
-        "[atulyaswar] Supabase write failed (issue entry submissions); falling back to local file.",
-        error,
-      );
-    }
+    // Fail closed when Supabase is configured — local /tmp fallback on Vercel
+    // looks like success but disappears on the next cold start / other instance.
+    await supabaseWriteJson(KV_KEY, items);
+    return;
   }
   await ensureDataFile();
   await writeFile(DATA_FILE, JSON.stringify(items, null, 2), "utf8");

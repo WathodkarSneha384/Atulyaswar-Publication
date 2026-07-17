@@ -6,7 +6,6 @@ import {
   listIssueEntrySubmissions,
   updateIssueEntrySubmission,
 } from "@/lib/issueEntrySubmissionStore";
-import { loadManuscriptFileBlob } from "@/lib/manuscriptFileStore";
 import {
   approveManuscript,
   getManuscriptById,
@@ -16,30 +15,33 @@ type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-/** Attach the exact manuscript paper file to the issue entry (same file admin downloads). */
-async function loadManuscriptPaperFields(manuscript: {
+/**
+ * Link manuscript → issue entry without embedding the paper bytes.
+ * Read resolves the exact file via manuscriptId (avoids huge KV payloads that
+ * can fail after the manuscript was already marked approved).
+ */
+function manuscriptEntryFields(manuscript: {
   id: string;
-  paperFileName: string;
+  title: string;
+  authorNames: string;
+  email: string;
+  paperFileName?: string;
   paperFileMimeType?: string;
-  paperFileBase64?: string;
 }) {
-  const stored = await loadManuscriptFileBlob({
-    id: manuscript.id,
-    kind: "paper",
-    fileName: manuscript.paperFileName,
-    fallbackBase64: manuscript.paperFileBase64,
-    fallbackMimeType: manuscript.paperFileMimeType,
-  });
-
-  if (!stored?.base64) return null;
-
   return {
-    pdfFileName: stored.fileName || manuscript.paperFileName,
-    pdfMimeType:
-      stored.mimeType ||
-      manuscript.paperFileMimeType ||
-      "application/octet-stream",
-    pdfBase64: stored.base64,
+    manuscriptId: manuscript.id,
+    title: manuscript.title,
+    author: manuscript.authorNames,
+    submitterEmail: manuscript.email,
+    pageNo: "TBD" as const,
+    status: "approved" as const,
+    publishStatus: "published" as const,
+    ...(manuscript.paperFileName
+      ? {
+          pdfFileName: manuscript.paperFileName,
+          pdfMimeType: manuscript.paperFileMimeType || "application/octet-stream",
+        }
+      : {}),
   };
 }
 
@@ -62,40 +64,50 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Submission not found." }, { status: 404 });
   }
 
-  const updated = await approveManuscript(id);
-
-  if (!updated) {
-    return NextResponse.json({ error: "Submission not found." }, { status: 404 });
-  }
-
-  const paperFields = await loadManuscriptPaperFields(manuscript);
+  const entryFields = manuscriptEntryFields(manuscript);
   const allEntries = await listIssueEntrySubmissions();
   const existingEntry = allEntries.find((item) => item.manuscriptId === id);
-  if (!existingEntry) {
-    await createIssueEntrySubmission({
-      manuscriptId: id,
-      issueId: currentIssue.id,
-      issueTitle: currentIssue.title,
-      title: manuscript.title,
-      author: manuscript.authorNames,
-      pageNo: "TBD",
-      submitterEmail: manuscript.email,
-      status: "approved",
-      publishStatus: "published",
-      ...(paperFields ?? {}),
-    });
-  } else {
-    await updateIssueEntrySubmission(existingEntry.id, {
-      issueId: currentIssue.id,
-      issueTitle: currentIssue.title,
-      title: manuscript.title,
-      author: manuscript.authorNames,
-      submitterEmail: manuscript.email,
-      status: "approved",
-      publishStatus: "published",
-      rejectedReason: undefined,
-      ...(paperFields && !existingEntry.pdfBase64 ? paperFields : {}),
-    });
+
+  try {
+    if (!existingEntry) {
+      await createIssueEntrySubmission({
+        ...entryFields,
+        issueId: currentIssue.id,
+        issueTitle: currentIssue.title,
+      });
+    } else {
+      await updateIssueEntrySubmission(existingEntry.id, {
+        issueId: currentIssue.id,
+        issueTitle: currentIssue.title,
+        title: manuscript.title,
+        author: manuscript.authorNames,
+        submitterEmail: manuscript.email,
+        status: "approved",
+        publishStatus: "published",
+        rejectedReason: undefined,
+        ...(manuscript.paperFileName && !existingEntry.pdfFileName
+          ? {
+              pdfFileName: manuscript.paperFileName,
+              pdfMimeType:
+                manuscript.paperFileMimeType || "application/octet-stream",
+            }
+          : {}),
+      });
+    }
+  } catch (error) {
+    console.error("[atulyaswar] Failed to create/update issue entry on approve:", error);
+    return NextResponse.json(
+      {
+        error:
+          "Could not add this manuscript to Issue To Publish / Current Issue. Please try Approve again.",
+      },
+      { status: 500 },
+    );
+  }
+
+  const updated = await approveManuscript(id);
+  if (!updated) {
+    return NextResponse.json({ error: "Submission not found." }, { status: 404 });
   }
 
   return NextResponse.json({ ok: true, item: updated });
