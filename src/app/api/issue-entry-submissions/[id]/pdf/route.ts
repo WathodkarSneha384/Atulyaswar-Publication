@@ -21,7 +21,6 @@ export async function GET(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  // External URL only — redirect public/admin there when no stored bytes.
   if (!item.pdfBase64 && item.pdfUrl?.trim() && !item.manuscriptId) {
     return NextResponse.redirect(item.pdfUrl.trim());
   }
@@ -37,26 +36,20 @@ export async function GET(request: Request, context: RouteContext) {
     );
   }
 
-  // Public Current Issue reader only serves PDFs inline.
-  if (!isAdmin && !file.isPdf) {
-    return NextResponse.json(
-      {
-        error:
-          "A PDF version is required for public reading. Please upload a PDF for this entry.",
-      },
-      { status: 404 },
-    );
-  }
-
-  const disposition = file.isPdf
-    ? "inline"
-    : `attachment; filename="${file.fileName.replace(/"/g, "")}"`;
+  // Public Current Issue: always inline (read), never force download.
+  // Admin DOC/DOCX can still download as attachment for review.
+  const disposition =
+    isAdmin && !file.isPdf
+      ? `attachment; filename="${file.fileName.replace(/"/g, "")}"`
+      : "inline";
 
   return new NextResponse(new Uint8Array(file.buffer), {
     headers: {
-      "Content-Type": file.mimeType,
+      "Content-Type": file.isPdf
+        ? "application/pdf"
+        : file.mimeType || "application/octet-stream",
       "Content-Disposition": disposition,
-      "Cache-Control": "no-store",
+      "Cache-Control": "public, max-age=300",
       "X-Content-Type-Options": "nosniff",
       "X-Robots-Tag": "noindex, nofollow",
     },

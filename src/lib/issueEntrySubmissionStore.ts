@@ -209,11 +209,7 @@ export async function listApprovedIssueEntriesForIssue(issueId: string) {
         readUrl = `/journal/read/${item.id}`;
       } else if (item.manuscriptId) {
         const manuscript = await getManuscriptById(item.manuscriptId);
-        const paperName = manuscript?.paperFileName ?? "";
-        const isPdf =
-          paperName.toLowerCase().endsWith(".pdf") ||
-          (manuscript?.paperFileMimeType ?? "").toLowerCase().includes("pdf");
-        if (isPdf && (paperName || manuscript?.paperFileBase64)) {
+        if (manuscript?.paperFileName || manuscript?.paperFileBase64) {
           readUrl = `/journal/read/${item.id}`;
         }
       }

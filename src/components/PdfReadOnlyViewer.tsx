@@ -5,10 +5,19 @@ import { useEffect } from "react";
 
 type PdfReadOnlyViewerProps = {
   title: string;
+  /** Same-origin API path or absolute PDF URL */
   pdfSrc: string;
+  /** Absolute public URL required for Office Online embed (DOC/DOCX) */
+  absoluteFileUrl?: string;
+  kind?: "pdf" | "office";
 };
 
-export default function PdfReadOnlyViewer({ title, pdfSrc }: PdfReadOnlyViewerProps) {
+export default function PdfReadOnlyViewer({
+  title,
+  pdfSrc,
+  absoluteFileUrl,
+  kind = "pdf",
+}: PdfReadOnlyViewerProps) {
   useEffect(() => {
     const blockKeys = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
@@ -28,7 +37,10 @@ export default function PdfReadOnlyViewer({ title, pdfSrc }: PdfReadOnlyViewerPr
     };
   }, []);
 
-  const embedSrc = `${pdfSrc}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`;
+  const embedSrc =
+    kind === "office" && absoluteFileUrl
+      ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteFileUrl)}`
+      : `${pdfSrc}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`;
 
   return (
     <section className="pdf-reader">
@@ -36,14 +48,19 @@ export default function PdfReadOnlyViewer({ title, pdfSrc }: PdfReadOnlyViewerPr
         <div>
           <p className="pdf-reader-kicker">Current Issue</p>
           <h1 className="pdf-reader-title">{title}</h1>
-          <p className="pdf-reader-note">Read-only view</p>
+          <p className="pdf-reader-note">Read-only view — downloading is disabled</p>
         </div>
         <Link href="/journal/current-issue" className="ghost-admin-btn">
           Back to Current Issue
         </Link>
       </header>
       <div className="pdf-reader-frame-wrap">
-        <iframe title={`Read: ${title}`} src={embedSrc} className="pdf-reader-frame" />
+        <iframe
+          title={`Read: ${title}`}
+          src={embedSrc}
+          className="pdf-reader-frame"
+          allow="fullscreen"
+        />
       </div>
     </section>
   );
