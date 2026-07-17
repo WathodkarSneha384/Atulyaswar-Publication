@@ -119,17 +119,12 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
 
   return (
     <section className="pdf-reader pdf-reader-fullbleed pdf-reader-no-copy">
-      <header className="pdf-reader-brand-bar">
-        <div className="pdf-reader-brand">
-          <p className="pdf-reader-brand-name">Atulyaswar</p>
-          <p className="pdf-reader-brand-tag">A Peer Reviewed Indian Music Journal</p>
-        </div>
+      <header className="pdf-reader-toolbar">
+        <h1 className="pdf-reader-title">{title}</h1>
         <Link href="/journal/current-issue" className="ghost-admin-btn">
           Back to Current Issue
         </Link>
       </header>
-
-      <h1 className="pdf-reader-title">{title}</h1>
 
       {loading ? <div className="pdf-reader-loading" aria-hidden="true" /> : null}
       {error ? <p className="pdf-reader-status error">{error}</p> : null}

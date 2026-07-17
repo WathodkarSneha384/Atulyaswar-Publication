@@ -3858,29 +3858,25 @@ a {
   max-width: none;
 }
 
-.pdf-reader-brand-bar {
+.pdf-reader-brand-bar,
+.pdf-reader-toolbar {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.35rem;
+}
+
+.pdf-reader-brand-bar {
   padding-bottom: 0.75rem;
   border-bottom: 1px solid #d9d0e6;
+  display: none;
 }
 
-.pdf-reader-brand-name {
-  margin: 0;
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: #5b2d82;
-  letter-spacing: 0.01em;
-}
-
+.pdf-reader-brand-name,
 .pdf-reader-brand-tag {
-  margin: 0.15rem 0 0;
-  font-size: 0.88rem;
-  color: #6b5a7e;
+  display: none;
 }
 
 .pdf-reader-header {
