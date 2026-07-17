@@ -136,7 +136,12 @@ async function renderMenuPage(slug: string) {
                         <td>{entry.author}</td>
                         <td>
                           {entry.readUrl ? (
-                            <a href={entry.readUrl} className="inline-link">
+                            <a
+                              href={entry.readUrl}
+                              className="inline-link"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
                               Read
                             </a>
                           ) : (

@@ -9,12 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@sparticuz/chromium": "^149.0.0",
     "@supabase/supabase-js": "^2.49.1",
     "docx-preview": "^0.4.0",
+    "html2pdf.js": "^0.14.0",
     "mammoth": "^1.12.0",
     "next": "^15",
-    "puppeteer-core": "^25.3.0",
     "react": "^19",
     "react-dom": "^19",
     "react-pdf": "^10.4.1",

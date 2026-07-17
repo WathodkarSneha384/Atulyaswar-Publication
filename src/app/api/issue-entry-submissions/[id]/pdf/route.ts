@@ -1,21 +1,18 @@
 import { NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/adminAuth";
-import { convertOfficeToPdf, isOfficePaperFile } from "@/lib/convertOfficeToPdf";
+import { convertOfficeToHtml, isOfficePaperFile } from "@/lib/convertOfficeToPdf";
 import {
   resolveIssueEntryFile,
   resolveIssueEntryOriginalFile,
 } from "@/lib/issueEntryFile";
-import {
-  getIssueEntrySubmissionById,
-  updateIssueEntrySubmission,
-} from "@/lib/issueEntrySubmissionStore";
+import { getIssueEntrySubmissionById } from "@/lib/issueEntrySubmissionStore";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 30;
 
 export async function GET(request: Request, context: RouteContext) {
   const { id } = await context.params;
@@ -38,42 +35,30 @@ export async function GET(request: Request, context: RouteContext) {
     return NextResponse.redirect(item.pdfUrl.trim());
   }
 
-  const file = wantOriginal
-    ? await resolveIssueEntryOriginalFile(item)
-    : await resolveIssueEntryFile(item);
-  if (!file) {
-    return NextResponse.json(
-      {
-        error:
-          "No uploaded file available for this entry. Open Paper on the manuscript, or upload a PDF under Issue To Publish.",
-      },
-      { status: 404 },
-    );
-  }
-
-  // Admin can still download the original DOC/DOCX via ?original=1
   if (wantOriginal) {
-    const disposition = file.isPdf
+    const original = await resolveIssueEntryOriginalFile(item);
+    if (!original) {
+      return NextResponse.json({ error: "No uploaded file available." }, { status: 404 });
+    }
+    const disposition = original.isPdf
       ? "inline"
-      : `attachment; filename="${file.fileName.replace(/"/g, "")}"`;
-    return new NextResponse(new Uint8Array(file.buffer), {
+      : `attachment; filename="${original.fileName.replace(/"/g, "")}"`;
+    return new NextResponse(new Uint8Array(original.buffer), {
       headers: {
-        "Content-Type": file.mimeType || "application/octet-stream",
+        "Content-Type": original.mimeType || "application/octet-stream",
         "Content-Disposition": disposition,
         "Cache-Control": "private, max-age=60",
         "X-Content-Type-Options": "nosniff",
         "X-Robots-Tag": "noindex, nofollow",
-        "X-File-Name": encodeURIComponent(file.fileName),
+        "X-File-Name": encodeURIComponent(original.fileName),
       },
     });
   }
 
-  // Public Current Issue reader always receives a PDF (convert DOC/DOCX like Print to PDF).
-  let pdfBuffer = file.buffer;
-  let pdfName = file.fileName;
-
-  if (file.isPdf) {
-    return new NextResponse(new Uint8Array(pdfBuffer), {
+  // Prefer cached/native PDF when available.
+  const file = await resolveIssueEntryFile(item);
+  if (file?.isPdf) {
+    return new NextResponse(new Uint8Array(file.buffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "inline",
@@ -81,57 +66,58 @@ export async function GET(request: Request, context: RouteContext) {
         "X-Content-Type-Options": "nosniff",
         "X-Robots-Tag": "noindex, nofollow",
         "X-File-Name": encodeURIComponent(
-          pdfName.toLowerCase().endsWith(".pdf") ? pdfName : `${pdfName}.pdf`,
+          file.fileName.toLowerCase().endsWith(".pdf")
+            ? file.fileName
+            : `${file.fileName}.pdf`,
         ),
+        "X-File-Kind": "pdf",
       },
     });
   }
 
-  // Prefer the original Word upload for conversion (not a stale cached non-PDF).
+  // Word papers: convert to print HTML (client turns this into a PDF view).
   let source = file;
   if (item.manuscriptId) {
     const original = await resolveIssueEntryOriginalFile(item);
     if (original && !original.isPdf) source = original;
   }
 
-  if (isOfficePaperFile(source.fileName, source.mimeType)) {
-    try {
-      pdfBuffer = await convertOfficeToPdf(source.buffer, source.fileName, item.title);
-      pdfName = source.fileName.replace(/\.(docx?|DOCX?)$/i, "") + ".pdf";
-
-      await updateIssueEntrySubmission(item.id, {
-        pdfFileName: pdfName,
-        pdfMimeType: "application/pdf",
-        pdfBase64: pdfBuffer.toString("base64"),
-      });
-    } catch (error) {
-      console.error("[atulyaswar] DOC/DOCX to PDF conversion failed", error);
-      return NextResponse.json(
-        {
-          error:
-            "Could not convert this Word paper to PDF for reading. Please upload a PDF from Admin → Issue To Publish → Edit.",
-        },
-        { status: 500 },
-      );
-    }
-  } else {
+  if (!source || !isOfficePaperFile(source.fileName, source.mimeType)) {
     return NextResponse.json(
       {
         error:
-          "This paper is not a PDF. Please upload a PDF from Admin → Issue To Publish → Edit.",
+          "No readable paper found. Upload a PDF or DOC/DOCX from Admin → Issue To Publish → Edit.",
       },
-      { status: 415 },
+      { status: 404 },
     );
   }
 
-  return new NextResponse(new Uint8Array(pdfBuffer), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": "inline",
-      "Cache-Control": "private, max-age=300",
-      "X-Content-Type-Options": "nosniff",
-      "X-Robots-Tag": "noindex, nofollow",
-      "X-File-Name": encodeURIComponent(pdfName),
-    },
-  });
+  try {
+    const html = await convertOfficeToHtml(source.buffer, source.fileName, item.title);
+    const pdfName = source.fileName.replace(/\.(docx?|DOCX?)$/i, "") + ".pdf";
+    return NextResponse.json(
+      {
+        kind: "html",
+        title: item.title,
+        fileName: pdfName,
+        html,
+      },
+      {
+        headers: {
+          "Cache-Control": "private, max-age=60",
+          "X-File-Kind": "html",
+          "X-File-Name": encodeURIComponent(pdfName),
+        },
+      },
+    );
+  } catch (error) {
+    console.error("[atulyaswar] Office to HTML conversion failed", error);
+    return NextResponse.json(
+      {
+        error:
+          "Could not prepare this Word paper for reading. Please upload a PDF from Admin → Issue To Publish → Edit.",
+      },
+      { status: 500 },
+    );
+  }
 }
