@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { renderAsync } from "docx-preview";
 
 type ExactFileReaderProps = {
   title: string;
+  entryId: string;
   fileUrl: string;
 };
 
@@ -15,16 +17,30 @@ function blockCopyShortcuts(event: KeyboardEvent) {
   }
 }
 
-function extractBodyHtml(fullHtml: string) {
-  const match = fullHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-  return match?.[1]?.trim() || fullHtml;
+function kindFromName(fileName: string, headerKind: string | null) {
+  if (headerKind === "pdf" || headerKind === "docx" || headerKind === "doc") {
+    return headerKind;
+  }
+  const lower = fileName.toLowerCase();
+  if (lower.endsWith(".pdf")) return "pdf";
+  if (lower.endsWith(".docx")) return "docx";
+  if (lower.endsWith(".doc")) return "doc";
+  return "";
 }
 
-export default function ExactFileReader({ title, fileUrl }: ExactFileReaderProps) {
+export default function ExactFileReader({ title, entryId, fileUrl }: ExactFileReaderProps) {
+  const docxHostRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [kind, setKind] = useState<"pdf" | "docx" | "doc" | "">("");
   const [pdfUrl, setPdfUrl] = useState("");
-  const [htmlBody, setHtmlBody] = useState("");
+  const [docxBuffer, setDocxBuffer] = useState<ArrayBuffer | null>(null);
+
+  const officeEmbedUrl = useMemo(() => {
+    if (typeof window === "undefined" || kind !== "doc") return "";
+    const rawUrl = `${window.location.origin}/api/issue-entry-submissions/${entryId}/pdf?raw=1`;
+    return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(rawUrl)}`;
+  }, [entryId, kind]);
 
   useEffect(() => {
     const blockClipboard = (event: Event) => event.preventDefault();
@@ -56,13 +72,16 @@ export default function ExactFileReader({ title, fileUrl }: ExactFileReaderProps
     async function loadPaper() {
       setLoading(true);
       setError("");
+      setKind("");
       setPdfUrl("");
-      setHtmlBody("");
+      setDocxBuffer(null);
 
       try {
-        const response = await fetch(fileUrl, { cache: "no-store" });
-        const contentType = (response.headers.get("content-type") || "").toLowerCase();
-
+        // Always load the original uploaded bytes for faithful display.
+        const rawUrl = fileUrl.includes("?")
+          ? `${fileUrl}&raw=1`
+          : `${fileUrl}?raw=1`;
+        const response = await fetch(rawUrl, { cache: "no-store" });
         if (!response.ok) {
           const payload = (await response.json().catch(() => null)) as
             | { error?: string }
@@ -70,33 +89,45 @@ export default function ExactFileReader({ title, fileUrl }: ExactFileReaderProps
           throw new Error(payload?.error || "Unable to load the paper.");
         }
 
+        const buffer = await response.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        const headerName = response.headers.get("x-file-name");
+        const fileName = headerName ? decodeURIComponent(headerName) : "";
+        const headerKind = response.headers.get("x-file-kind");
+        const isPdfMagic =
+          bytes.length >= 4 &&
+          String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3]) === "%PDF";
+
         if (cancelled) return;
 
-        if (contentType.includes("application/pdf")) {
-          const buffer = await response.arrayBuffer();
-          const bytes = new Uint8Array(buffer);
-          const isPdf =
-            bytes.length >= 4 &&
-            String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3]) === "%PDF";
-          if (!isPdf) {
-            throw new Error("Unable to load the paper.");
-          }
-          objectUrl = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+        const detected = isPdfMagic
+          ? "pdf"
+          : kindFromName(fileName, headerKind);
+
+        if (detected === "pdf") {
+          objectUrl = URL.createObjectURL(
+            new Blob([buffer], { type: "application/pdf" }),
+          );
+          setKind("pdf");
           setPdfUrl(objectUrl);
           setLoading(false);
           return;
         }
 
-        const payload = (await response.json()) as {
-          kind?: string;
-          html?: string;
-          error?: string;
-        };
-        if (payload.error) throw new Error(payload.error);
-        if (!payload.html) throw new Error("Unable to load the paper.");
+        if (detected === "docx") {
+          setKind("docx");
+          setDocxBuffer(buffer);
+          setLoading(false);
+          return;
+        }
 
-        setHtmlBody(extractBodyHtml(payload.html));
-        setLoading(false);
+        if (detected === "doc") {
+          setKind("doc");
+          setLoading(false);
+          return;
+        }
+
+        throw new Error("Unable to load the paper.");
       } catch (loadError) {
         if (cancelled) return;
         setError(loadError instanceof Error ? loadError.message : "Unable to load the paper.");
@@ -111,21 +142,38 @@ export default function ExactFileReader({ title, fileUrl }: ExactFileReaderProps
     };
   }, [fileUrl]);
 
+  useEffect(() => {
+    if (kind !== "docx" || !docxBuffer || !docxHostRef.current) return;
+    const host = docxHostRef.current;
+    host.innerHTML = "";
+    void renderAsync(docxBuffer, host, undefined, {
+      className: "docx-preview-doc",
+      inWrapper: true,
+      ignoreWidth: false,
+      breakPages: true,
+    }).catch(() => {
+      setError("Unable to open this document.");
+    });
+  }, [kind, docxBuffer]);
+
   return (
     <section className="pdf-reader pdf-reader-no-copy">
-      <header className="pdf-reader-header">
-        <div>
-          <h1 className="pdf-reader-title">{title}</h1>
+      <header className="pdf-reader-brand-bar">
+        <div className="pdf-reader-brand">
+          <p className="pdf-reader-brand-name">Atulyaswar</p>
+          <p className="pdf-reader-brand-tag">A Peer Reviewed Indian Music Journal</p>
         </div>
         <Link href="/journal/current-issue" className="ghost-admin-btn">
           Back to Current Issue
         </Link>
       </header>
 
+      <h1 className="pdf-reader-title">{title}</h1>
+
       {loading ? <div className="pdf-reader-loading" aria-hidden="true" /> : null}
       {error ? <p className="pdf-reader-status error">{error}</p> : null}
 
-      {pdfUrl ? (
+      {kind === "pdf" && pdfUrl ? (
         <div className="pdf-reader-frame-wrap">
           <iframe
             title={title}
@@ -135,12 +183,12 @@ export default function ExactFileReader({ title, fileUrl }: ExactFileReaderProps
         </div>
       ) : null}
 
-      {htmlBody ? (
-        <article
-          className="html-reader-content"
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: htmlBody }}
-        />
+      {kind === "docx" ? <div className="exact-docx-host" ref={docxHostRef} /> : null}
+
+      {kind === "doc" && officeEmbedUrl ? (
+        <div className="pdf-reader-frame-wrap">
+          <iframe title={title} src={officeEmbedUrl} className="pdf-reader-frame" />
+        </div>
       ) : null}
     </section>
   );

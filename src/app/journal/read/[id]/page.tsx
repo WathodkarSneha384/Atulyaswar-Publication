@@ -16,10 +16,12 @@ export default async function JournalReadPage({ params }: PageProps) {
     notFound();
   }
 
-  // Same file endpoint used by Admin → Read / Download.
-  const fileUrl = item.pdfUrl?.trim() && !item.pdfBase64 && !item.manuscriptId
-    ? item.pdfUrl.trim()
-    : `/api/issue-entry-submissions/${item.id}/pdf`;
+  const fileUrl =
+    item.pdfUrl?.trim() && !item.pdfBase64 && !item.manuscriptId
+      ? item.pdfUrl.trim()
+      : `/api/issue-entry-submissions/${item.id}/pdf`;
 
-  return <ExactFileReader title={item.title} fileUrl={fileUrl} />;
+  return (
+    <ExactFileReader title={item.title} entryId={item.id} fileUrl={fileUrl} />
+  );
 }

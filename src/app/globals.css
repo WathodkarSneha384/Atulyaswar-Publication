@@ -3847,12 +3847,57 @@ a {
   min-height: 70vh;
 }
 
+.pdf-reader-brand-bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #d9d0e6;
+}
+
+.pdf-reader-brand-name {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #5b2d82;
+  letter-spacing: 0.01em;
+}
+
+.pdf-reader-brand-tag {
+  margin: 0.15rem 0 0;
+  font-size: 0.88rem;
+  color: #6b5a7e;
+}
+
 .pdf-reader-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
+}
+
+.exact-docx-host {
+  min-height: 70vh;
+  padding: 0.75rem;
+  border: 1px solid #d9d0e6;
+  background: #efeaf6;
+  overflow: auto;
+}
+
+.exact-docx-host .docx-wrapper {
+  background: transparent;
+  padding: 0.5rem 0 1.25rem;
+}
+
+.exact-docx-host .docx-wrapper > section.docx {
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(42, 31, 61, 0.12);
+  margin: 0 auto 1rem;
+  padding: 1.25rem 1.4rem;
 }
 
 .pdf-reader-kicker {
