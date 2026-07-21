@@ -193,21 +193,37 @@ export async function listApprovedIssueEntriesForIssue(issueId: string) {
       item.publishStatus === "published",
   );
 
-  const normalizeTitle = (title: string) => title.trim().toLowerCase();
-  const displayRank = (title: string) => {
-    const t = normalizeTitle(title);
-    // Fixed journal front-matter order on Current Issue.
-    if (t === "front page") return 0;
-    if (t === "editorial desk") return 1;
+  const normalize = (value: string) => value.trim().toLowerCase();
+
+  // Fixed Current Issue sequence:
+  // 1 Front Page, 2 Editorial Desk, then research papers by author.
+  const authorOrder = [
+    "durga",
+    "atindra",
+    "shupreet",
+    "kalpana",
+    "kalyan",
+    "bhagyashree",
+    "aditi",
+  ];
+
+  const displayRank = (item: IssueEntrySubmission) => {
+    const title = normalize(item.title);
+    if (title === "front page") return 0;
+    if (title === "editorial desk") return 1;
+
+    const author = normalize(item.author);
+    const authorIndex = authorOrder.findIndex((token) => author.includes(token));
+    if (authorIndex >= 0) return 2 + authorIndex;
+
     const priorityPrefix = "atulyaswar -";
-    if (t.startsWith(priorityPrefix)) return 2;
-    return 3;
+    if (title.startsWith(priorityPrefix)) return 100;
+    return 200;
   };
 
   const sortedEntries = [...approvedAndPublished].sort((a, b) => {
-    const rankDiff = displayRank(a.title) - displayRank(b.title);
+    const rankDiff = displayRank(a) - displayRank(b);
     if (rankDiff !== 0) return rankDiff;
-    // Keep remaining papers in chronological publish order.
     return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   });
 
