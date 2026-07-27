@@ -48,6 +48,17 @@ const DATA_DIR = process.env.VERCEL
   : path.join(process.cwd(), "data");
 const DATA_FILE = path.join(DATA_DIR, "issue-entry-submissions.json");
 const KV_KEY = "atulyaswar:issue-entry-submissions";
+const PUBLIC_KV_KEY = "atulyaswar:issue-entry-submissions-public";
+
+type PublicIssueEntrySubmission = Omit<IssueEntrySubmission, "pdfBase64">;
+
+function toPublicItems(items: IssueEntrySubmission[]): PublicIssueEntrySubmission[] {
+  return items.map((item) => {
+    const { pdfBase64: _pdfBase64, ...rest } = item;
+    void _pdfBase64;
+    return rest;
+  });
+}
 
 async function ensureDataFile() {
   await mkdir(DATA_DIR, { recursive: true });
@@ -82,11 +93,38 @@ async function readAll(): Promise<IssueEntrySubmission[]> {
   }
 }
 
+async function readPublicAll(): Promise<PublicIssueEntrySubmission[]> {
+  if (hasSupabaseConfig()) {
+    try {
+      const data = await supabaseReadJson<PublicIssueEntrySubmission[]>(PUBLIC_KV_KEY);
+      if (data === null) {
+        // Self-heal: if public key is missing, derive it from full records once.
+        const full = await readAll();
+        const derived = toPublicItems(full);
+        await supabaseWriteJson(PUBLIC_KV_KEY, derived);
+        return derived;
+      }
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error(
+        "[atulyaswar] Supabase read failed (public issue entry submissions); falling back to full data.",
+        error,
+      );
+      const full = await readAll();
+      return toPublicItems(full);
+    }
+  }
+
+  const full = await readAll();
+  return toPublicItems(full);
+}
+
 async function writeAll(items: IssueEntrySubmission[]) {
   if (hasSupabaseConfig()) {
     // Fail closed when Supabase is configured — local /tmp fallback on Vercel
     // looks like success but disappears on the next cold start / other instance.
     await supabaseWriteJson(KV_KEY, items);
+    await supabaseWriteJson(PUBLIC_KV_KEY, toPublicItems(items));
     return;
   }
   await ensureDataFile();
@@ -110,7 +148,7 @@ export async function createIssueEntrySubmission(input: NewSubmissionInput) {
 export async function listIssueEntrySubmissions(
   status?: IssueEntrySubmissionStatus,
 ) {
-  const all = await readAll();
+  const all = await readPublicAll();
   if (!status) return all;
   return all.filter((item) => item.status === status);
 }
@@ -184,7 +222,7 @@ export async function deleteIssueEntrySubmission(id: string) {
 }
 
 export async function listApprovedIssueEntriesForIssue(issueId: string) {
-  const all = await readAll();
+  const all = await readPublicAll();
   // PDF is optional for listing; Read link is blank until a PDF is uploaded.
   const approvedAndPublished = all.filter(
     (item) =>
@@ -230,7 +268,7 @@ export async function listApprovedIssueEntriesForIssue(issueId: string) {
   return Promise.all(
     sortedEntries.map(async (item, index) => {
       let readUrl = "";
-      if (item.pdfUrl?.trim() || item.pdfBase64) {
+      if (item.pdfUrl?.trim() || item.pdfFileName?.trim()) {
         readUrl = `/journal/read/${item.id}`;
       } else if (item.manuscriptId) {
         // Show Read whenever a manuscript is linked; the reader page
