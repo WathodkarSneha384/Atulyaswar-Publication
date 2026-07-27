@@ -1,7 +1,16 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+
+const MobileFriendlyPdfViewer = dynamic(
+  () => import("@/components/MobileFriendlyPdfViewer"),
+  {
+    ssr: false,
+    loading: () => <div className="pdf-reader-loading" aria-hidden="true" />,
+  },
+);
 
 type ExactFileReaderProps = {
   title: string;
@@ -26,7 +35,6 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
   const filePath = `/api/issue-entry-submissions/${entryId}/pdf`;
 
   // Word files: Microsoft Office Online keeps page header/masthead closest to the upload.
-  // (docx-preview rewrites tables/images and changes the journal header look.)
   const wordEmbedSrc = useMemo(() => {
     if (typeof window === "undefined" || (kind !== "docx" && kind !== "doc")) {
       return "";
@@ -89,7 +97,7 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
 
         if (cancelled) return;
 
-        // PDF upload: show exact bytes inline (header matches the uploaded PDF).
+        // PDF: render with pdf.js (works on mobile; native object/embed often shows only "Open").
         if (isPdf) {
           objectUrl = URL.createObjectURL(
             new Blob([buffer], { type: "application/pdf" }),
@@ -126,10 +134,6 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
     };
   }, [filePath]);
 
-  const pdfSrc = pdfObjectUrl
-    ? `${pdfObjectUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`
-    : "";
-
   return (
     <section className="pdf-reader pdf-reader-fullbleed pdf-reader-no-copy">
       <header className="pdf-reader-toolbar">
@@ -142,17 +146,8 @@ export default function ExactFileReader({ title, entryId }: ExactFileReaderProps
       {loading ? <div className="pdf-reader-loading" aria-hidden="true" /> : null}
       {error ? <p className="pdf-reader-status error">{error}</p> : null}
 
-      {kind === "pdf" && pdfSrc ? (
-        <div className="pdf-reader-frame-wrap pdf-reader-frame-wrap-tall">
-          <object
-            data={pdfSrc}
-            type="application/pdf"
-            title={title}
-            className="pdf-reader-frame"
-          >
-            <embed src={pdfSrc} type="application/pdf" className="pdf-reader-frame" />
-          </object>
-        </div>
+      {kind === "pdf" && pdfObjectUrl ? (
+        <MobileFriendlyPdfViewer fileUrl={pdfObjectUrl} title={title} />
       ) : null}
 
       {(kind === "docx" || kind === "doc") && wordEmbedSrc ? (
